@@ -1,0 +1,6 @@
+.cache
+.qmlls.ini
+compile_commands.json
+gcc-ninja-preset/
+*-preset/
+
