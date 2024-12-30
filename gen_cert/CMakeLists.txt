@@ -42,7 +42,7 @@ list(
   OpenSSL::Crypto
 )
 
-list(APPEND EXTRA_COMPILE_FLAGS "-Wno-deprecated-declarations")
+# list(APPEND EXTRA_COMPILE_FLAGS "-Wno-deprecated-declarations")
 
 qt_add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
 

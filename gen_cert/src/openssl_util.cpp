@@ -9,6 +9,12 @@
 #include <openssl/x509.h>
 #include <openssl_util.h>
 
+#ifdef _WIN32
+extern "C" {
+#include <openssl/applink.c>
+}
+#endif
+
 // 生成 SM2 公私钥对
 evp_pkey_shared_ptr generateSM2Key() 
 {

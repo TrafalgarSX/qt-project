@@ -9,6 +9,31 @@
 			}
 		},
 		{
+            "name": "vs2022-v64-ninja-preset",
+            "displayName": "VS-amd64-Ninja",
+            "description": "Using compilers for Visual Studio 17 2022 (x64 architecture)",
+            "generator": "Ninja Multi-Config",
+			"binaryDir": "${sourceDir}/${presetName}",
+            "architecture":{
+                "strategy": "external",
+                "value": "x64"
+            },
+            "toolset": {
+                "strategy": "external",
+                "value": "v143,host=x64"
+            },
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "c:/workspace/opensource/vcpkg/scripts/buildsystems/vcpkg.cmake",
+				"CMAKE_INSTALL_PREFIX": "${sourceDir}/${presetName}/install",
+				"CMAKE_CXX_COMPILER": "cl.exe",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE",
+                "QT_QML_GENERATE_QMLLS_INI": "TRUE"
+			},
+			"environment": {
+                "PATH": "$penv{PATH};C:/Qt/6.8.1/msvc2022_64/bin"
+			}
+		},
+		{
 			"name": "gcc-ninja-preset",
 			"displayName": "gcc64-Ninja",
 			"description": "Using compilers for g++ (x64 architecture)",
@@ -25,14 +50,28 @@
 	],
     "buildPresets": [
         {
-            "name": "Release64",
+            "name": "Release64-msvc",
+            "description": "Release build using vs2019-v64-ninja-presets",
+            "displayName": "Release 64-bit",
+            "configurePreset": "vs2022-v64-ninja-preset",
+            "configuration": "Release"
+        },
+        {
+            "name": "Debug64-msvc",
+            "description": "Debug build using vs2019-v64-ninja-presets",
+            "displayName": "Debug 64-bit",
+            "configurePreset": "vs2022-v64-ninja-preset",
+            "configuration": "Debug"
+        },
+        {
+            "name": "Release64-linux-gcc",
             "description": "Release build using vs2019-v64-ninja-presets",
             "displayName": "Release 64-bit",
             "configurePreset": "gcc-ninja-preset",
             "configuration": "Release"
         },
         {
-            "name": "Debug64",
+            "name": "Debug64-linux-gcc",
             "description": "Debug build using vs2019-v64-ninja-presets",
             "displayName": "Debug 64-bit",
             "configurePreset": "gcc-ninja-preset",
