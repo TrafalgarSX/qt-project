@@ -6,6 +6,7 @@ import Qt.labs.platform
 import "utils.js" as Utils
 
 ApplicationWindow {
+    id: rootWindow
     visible: true
     height: 600 
     width: 1200
@@ -100,7 +101,7 @@ ApplicationWindow {
                         anchors.left: parent.left
                         anchors.leftMargin: parent.width / 4
                         onClicked: {
-                            currentFolderTarget = "sign"
+                            rootWindow.currentFolderTarget = "sign"
                             fileDialog.open()
                         }
                     }
@@ -114,20 +115,24 @@ ApplicationWindow {
                         anchors.right: parent.right
                         anchors.rightMargin: parent.width / 4
                         onClicked: {
-                            if(encPubKeyHex.text === "") {
+                            if(signPubKeyHex.text === "") {
                                 failureDialog.text = qsTr("签名公钥不能为空！")
                                 failureDialog.open()
+                                return
                             }
-                            if(encPubKeyPath.text === "") {
+                            if(signPubKeyPath.text === "") {
                                 failureDialog.text = qsTr("签名公钥保存路径不能为空！")
                                 failureDialog.open()
+                                return
                             }
 
                             var success = genCertHelper.genCert(signPubKeyHex.text, signPubKeyPath.text)
                             if(success) {
+                                successDialog.text = qsTr("签名证书生成成功！")
                                 successDialog.open()
                             }else{
-                                errorDialog.open()
+                                successDialog.text = qsTr("签名证书生成失败！")
+                                failureDialog.open()
                             }
                         }
                     }
@@ -210,7 +215,7 @@ ApplicationWindow {
                         anchors.left: parent.left
                         anchors.leftMargin: parent.width / 4
                         onClicked: {
-                            currentFolderTarget = "enc"
+                            rootWindow.currentFolderTarget = "enc"
                             fileDialog.open()
                         }
                     }
@@ -227,17 +232,21 @@ ApplicationWindow {
                             if(encPubKeyHex.text === "") {
                                 failureDialog.text = qsTr("加密公钥不能为空！")
                                 failureDialog.open()
+                                return
                             }
                             if(encPubKeyPath.text === "") {
                                 failureDialog.text = qsTr("加密公钥保存路径不能为空！")
                                 failureDialog.open()
+                                return
                             }
 
                             var success = genCertHelper.genCert(encPubKeyHex.text, encPubKeyPath.text)
                             if(success) {
+                                successDialog.text = qsTr("加密证书生成成功！")
                                 successDialog.open()
                             }else{
-                                errorDialog.open()
+                                successDialog.text = qsTr("加密证书生成失败！")
+                                failureDialog.open()
                             }
                         }
                     }
@@ -251,10 +260,10 @@ ApplicationWindow {
             fileMode: FileDialog.SaveFile
             nameFilters: ["cert files (*.pem *.crt)"]
             onAccepted: {
-                if (currentFolderTarget === "sign") {
-                    signPubKeyPath.text = fileDialog.file.toString().replace("file://", "")
+                if (rootWindow.currentFolderTarget === "sign") {
+                    signPubKeyPath.text = fileDialog.file
                 } else {
-                    encPubKeyPath.text = fileDialog.file.toString().replace("file://", "")
+                    encPubKeyPath.text = fileDialog.file
                 }
             }
         }
@@ -262,16 +271,13 @@ ApplicationWindow {
         MessageDialog {
             id: successDialog
             title: qsTr("成功")
-            text: qsTr("证书生成成功！")
             buttons: MessageDialog.Ok
         }
 
         MessageDialog {
             id: failureDialog
             title: qsTr("失败")
-            text: qsTr("证书生成失败！")
             buttons: MessageDialog.Ok
-
         }
 
     }
