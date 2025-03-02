@@ -19,6 +19,7 @@ list(APPEND PROJECT_SOURCES
             ${PROJECT_SOURCE_DIR}/src/openssl_util.cpp
             ${PROJECT_SOURCE_DIR}/src/gen_cert.cpp
             ${PROJECT_SOURCE_DIR}/src/file_dialog_helper.cpp
+            ${PROJECT_SOURCE_DIR}/src/emit_signal.cpp
             )
 
 list(
@@ -44,7 +45,8 @@ list(
 
 # list(APPEND EXTRA_COMPILE_FLAGS "-Wno-deprecated-declarations")
 set(WIN32_FLAG "")
-if (WIN32)
+# if (WIN32)
+if (0)
     set(WIN32_FLAG "WIN32")
 endif()
 qt_add_executable(${PROJECT_NAME} ${WIN32_FLAG} ${PROJECT_SOURCES})
@@ -62,11 +64,19 @@ qt_add_qml_module(${PROJECT_NAME}
     VERSION 1.0
     QML_FILES
         ui/gen_cert.qml 
+        ui/Test.qml
         ui/utils.js
+    SOURCES
+        ${PROJECT_SOURCE_DIR}/src/bind_property.h ${PROJECT_SOURCE_DIR}/src/bind_property.cpp
     RESOURCES
         rc/simp.png
         rc/qt-logo.png
 )
+
+
+add_executable(sm2test ${PROJECT_SOURCE_DIR}/test/sm2test.cpp ${PROJECT_SOURCE_DIR}/src/openssl_util.cpp ${PROJECT_SOURCE_DIR}/src/hex_util.cpp)
+target_link_libraries(sm2test PUBLIC OpenSSL::Crypto)
+target_include_directories(sm2test PUBLIC ${PROJECT_INCLUDES})
 
 # NSIS packaging
 
