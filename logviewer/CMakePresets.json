@@ -1,0 +1,76 @@
+{
+	"version": 3,
+	"configurePresets": [
+		{
+			"hidden": true,
+			"name": "Qt",
+			"cacheVariables": {
+				"CMAKE_PREFIX_PATH": "$env{QTDIR}"
+			}
+		},
+		{
+			"name": "vs2019-64-presets",
+			"displayName": "Qt-vs2019-x64",
+			"description": "Using compilers for Visual Studio 17 2022 (x64 architecture)",
+			"generator": "Visual Studio 17 2022",
+			"toolset": "v142",
+			"architecture": "x64",
+			"binaryDir": "${sourceDir}/${presetName}",
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "C:/workspace/opensource/vcpkg/scripts/buildsystems/vcpkg.cmake",
+				"CMAKE_INSTALL_PREFIX": "${sourceDir}/${presetName}",
+				"CMAKE_CXX_COMPILER": "cl.exe"
+			}
+		},
+		{
+			"name": "vs2022-v64-ninja-presets",
+			"displayName": "VS-amd64-Ninja-v143",
+			"description": "Using compilers for Visual Studio 17 2022 (x64 architecture)",
+			"generator": "Ninja",
+			"binaryDir": "${sourceDir}/${presetName}",
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "C:/workspace/opensource/vcpkg/scripts/buildsystems/vcpkg.cmake",
+				"CMAKE_INSTALL_PREFIX": "${sourceDir}/${presetName}",
+				"CMAKE_CXX_COMPILER": "cl.exe",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
+			}
+		},
+        {
+			"name": "vs2019-v64-ninja-presets",
+			"displayName": "VS-amd64-Ninja-v142",
+			"description": "Using compilers(v142) for Visual Studio 17 2022 (x64 architecture)",
+			"generator": "Ninja Multi-Config",
+			"binaryDir": "${sourceDir}/${presetName}",
+      "architecture":{
+			    "strategy": "external",
+                "value": "x64"
+            },
+			"toolset": {
+				"strategy": "external",
+				"value": "v142,host=x64"
+			},
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "C:/workspace/opensource/vcpkg/scripts/buildsystems/vcpkg.cmake",
+				"CMAKE_INSTALL_PREFIX": "${sourceDir}/${presetName}",
+				"CMAKE_CXX_COMPILER": "cl.exe",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE"
+			}
+		}
+	],
+    "buildPresets": [
+        {
+            "name": "Release64",
+            "description": "Release build using vs2019-v64-ninja-presets",
+            "displayName": "Release 64-bit",
+            "configurePreset": "vs2019-v64-ninja-presets",
+            "configuration": "Release"
+        },
+        {
+            "name": "Debug64",
+            "description": "Debug build using vs2019-v64-ninja-presets",
+            "displayName": "Debug 64-bit",
+            "configurePreset": "vs2019-v64-ninja-presets",
+            "configuration": "Debug"
+        }
+    ]
+}
