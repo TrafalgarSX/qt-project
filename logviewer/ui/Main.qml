@@ -276,15 +276,14 @@ ApplicationWindow {
 
         Keys.onPressed: (event) => {
             if (event.key === Qt.Key_Up) {
-                var newRow = selectionModel.selectedIndexes[0].row - 1;
+                var newRow = logTableView.selectionModel.selectedIndexes[0].row - 1;
                 if (newRow < 0)
                     newRow = 0;
                 logTableView.selectionModel.select(model.index(newRow, 0), 
                     ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
                 event.accepted = true;
             } else if (event.key === Qt.Key_Down) {
-                console.log("down")
-                var newRow = selectionModel.selectedIndexes[0].row + 1;
+                var newRow = logTableView.selectionModel.selectedIndexes[0].row + 1;
                 if (newRow >= model.rowCount())
                     newRow = model.rowCount() - 1;
                 logTableView.selectionModel.select(model.index(newRow, 0), 
