@@ -1,0 +1,106 @@
+[2024-12-22 23:44:08.333][thread 10008][info][: ] etmc_daemon log started
+[2024-12-22 23:44:32.169][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...eetmc.exe abnormal exit, restarting...
+tmc.exe abnormal exit, restarting...etmc.exe abnormal exit, restarting...
+tmc.exe abnormal exit, restarting...etmc.exe abnormal exit, restarting...
+[2024-12-22 23:44:32.169][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:44:32.169][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:44:32.252][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:44:45.404][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:44:45.404][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:44:45.404][thread 10008][info][main.cpp:176 operator()] exitCode: 050000C0
+[2024-12-22 23:44:45.485][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:45:01.464][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:45:01.464][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:45:01.464][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:45:01.546][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:45:31.752][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:45:31.752][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:45:31.752][thread 10008][debug][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:45:31.829][thread 10008][critical][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:45:45.585][thread 10008][warn][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:45:45.585][thread 10008][error][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:45:45.585][thread 10008][error][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:45:45.666][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:45:58.484][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:45:58.484][thread 10008][warn][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:45:58.484][thread 10008][info][main.cpp:176 operator()] exitCode: 050000C0
+[2024-12-22 23:45:58.562][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:46:11.985][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:46:11.985][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:46:11.985][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:46:12.075][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:46:25.585][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:46:25.585][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:46:25.585][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:46:25.670][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:46:39.879][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:46:39.879][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:46:39.879][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:46:39.963][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:46:53.930][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:49:15.786][thread 10008][info][main.cpp:153 operator()] 子进程正常退出
+[2024-12-22 23:49:15.821][thread 10008][info][main.cpp:182 operator()] etmc.exe normal exit, daemon exiting...
+[2024-12-22 23:49:15.821][thread 10008][info][main.cpp:186 operator()] exitCode: 00000000
+[2024-12-27 01:54:00.361][thread 11856][info][: ] etmc_daemon log started
+[2024-12-27 01:54:37.606][thread 11856][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-27 01:54:37.606][thread 11856][info][main.cpp:176 operator()] exitCode: 050000C0
+[2024-12-27 01:54:37.696][thread 11856][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-27 01:54:50.846][thread 11856][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-27 01:57:07.753][thread 11856][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-27 01:57:07.753][thread 11856][info][main.cpp:176 operator()] exitCode: 050000C0
+[2024-12-27 01:57:07.840][thread 11856][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-27 01:57:25.262][thread 11856][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-27 01:57:30.107][thread 11856][info][main.cpp:153 operator()] 子进程正常退出
+[2024-12-27 01:57:30.153][thread 11856][info][main.cpp:182 operator()] etmc.exe normal exit, daemon exiting...
+[2024-12-27 01:57:30.153][thread 11856][info][main.cpp:186 operator()] exitCode: 00000000
+[2024-12-22 23:44:08.333][thread 10008][info][: ] etmc_daemon log started
+[2024-12-22 23:44:32.169][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:44:32.252][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:44:45.404][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:44:45.404][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:44:45.404][thread 10008][info][main.cpp:176 operator()] exitCode: 050000C0
+[2024-12-22 23:44:45.485][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:45:01.464][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:45:01.464][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:45:01.464][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:45:01.546][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:45:31.752][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:45:31.752][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:45:31.752][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:45:31.829][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:45:45.585][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:45:45.585][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:45:45.585][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:45:45.666][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:45:58.484][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:45:58.484][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:45:58.484][thread 10008][info][main.cpp:176 operator()] exitCode: 050000C0
+[2024-12-22 23:45:58.562][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:46:11.985][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:46:11.985][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:46:11.985][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:46:12.075][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:46:25.585][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:46:25.585][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:46:25.585][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:46:25.670][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:46:39.879][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:46:39.879][thread 10008][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-22 23:46:39.879][thread 10008][info][main.cpp:176 operator()] exitCode: 740300C0
+[2024-12-22 23:46:39.963][thread 10008][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-22 23:46:53.930][thread 10008][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-22 23:49:15.786][thread 10008][info][main.cpp:153 operator()] 子进程正常退出
+[2024-12-22 23:49:15.821][thread 10008][info][main.cpp:182 operator()] etmc.exe normal exit, daemon exiting...
+[2024-12-22 23:49:15.821][thread 10008][info][main.cpp:186 operator()] exitCode: 00000000
+[2024-12-27 01:54:00.361][thread 11856][info][: ] etmc_daemon log started
+[2024-12-27 01:54:37.606][thread 11856][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-27 01:54:37.606][thread 11856][info][main.cpp:176 operator()] exitCode: 050000C0
+[2024-12-27 01:54:37.696][thread 11856][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-27 01:54:50.846][thread 11856][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-27 01:57:07.753][thread 11856][info][main.cpp:174 operator()] etmc.exe abnormal exit, restarting...
+[2024-12-27 01:57:07.753][thread 11856][info][main.cpp:176 operator()] exitCode: 050000C0
+[2024-12-27 01:57:07.840][thread 11856][info][main.cpp:136 operator()] 子进程初始化完成
+[2024-12-27 01:57:25.262][thread 11856][info][main.cpp:150 operator()] Notifyevent成功,ret = 0
+[2024-12-27 01:57:30.107][thread 11856][info][main.cpp:153 operator()] 子进程正常退出
+[2024-12-27 01:57:30.153][thread 11856][info][main.cpp:182 operator()] etmc.exe normal exit, daemon exiting...
+[2024-12-27 01:57:30.153][thread 11856][info][main.cpp:186 operator()] exitCode: 00000000

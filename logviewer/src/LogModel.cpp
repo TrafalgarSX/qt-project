@@ -3,6 +3,9 @@
 #include <QTextStream>
 #include <QRegularExpression>
 #include <QDebug>
+#include <QUrl>
+#include <QGuiApplication>
+#include <QClipboard>
 
 LogModel::LogModel(QObject *parent)
     : QAbstractItemModel(parent)
@@ -16,18 +19,43 @@ LogModel::~LogModel()
 QHash<int, QByteArray> LogModel::roleNames() const
 {
     QHash<int, QByteArray> roles;
-    roles[LogTimestampRole] = "logTimestamp";
-    roles[LogMessageRole]   = "logMessage";
-    roles[LogThreadRole]    = "logThread";
-    roles[LogLevelRole]     = "logLevel";
+    roles[LogDisplayRole] = "display";
     return roles;
 }
 
 QModelIndex LogModel::index(int row, int column, const QModelIndex &parent) const
 {
-    if (parent.isValid() || row < 0 || row >= m_entries.size() || column != 0)
+    if (parent.isValid() || row < 0 || row >= m_entries.size() || column < 0 || column >= 7)
         return QModelIndex();
-    return createIndex(row, column);
+    // 将 row 与 column 存储在内部指针中（如果需要，可传递数据）
+
+    auto *entry = const_cast<LogEntry *>(&m_entries.at(row));
+    QString *data = nullptr;
+
+    switch(column){
+        case 0:
+            data = &entry->timestamp;
+            break;
+        case 1:
+            data = &entry->thread;
+            break;
+        case 2:
+            data = &entry->level;
+            break;
+        case 3:
+            data = &entry->file;
+            break;
+        case 4:
+            data = &entry->line;
+            break;
+        case 5:
+            data = &entry->function;
+            break;
+        case 6:
+            data = &entry->message;
+            break;
+    }
+    return createIndex(row, column, data);
 }
 
 QModelIndex LogModel::parent(const QModelIndex &index) const
@@ -46,7 +74,7 @@ int LogModel::rowCount(const QModelIndex &parent) const
 int LogModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return 1;
+    return 7;
 }
 
 QVariant LogModel::data(const QModelIndex &index, int role) const
@@ -55,18 +83,60 @@ QVariant LogModel::data(const QModelIndex &index, int role) const
         return QVariant();
 
     const LogEntry &entry = m_entries.at(index.row());
-    switch (role) {
-    case LogTimestampRole:
-        return entry.timestamp;
-    case LogThreadRole:
-        return entry.thread;
-    case LogLevelRole:
-        return entry.level;
-    case LogMessageRole:
-        return entry.message;
-    default:
+
+    if (role == LogDisplayRole) {
+        switch (index.column()) {
+        case 0:
+            return entry.timestamp;
+        case 1:
+            return entry.thread;
+        case 2:
+            return entry.level;
+        case 3:
+            return entry.file;
+        case 4:
+            return entry.line;
+        case 5:
+            return entry.function;
+        case 6:
+            return entry.message;
+        }
+    }
+    return QVariant();
+}
+
+QVariant LogModel::headerData(int section, Qt::Orientation orientation,
+                        int role) const
+{
+    if (Qt::Horizontal == orientation && role == LogDisplayRole)
+    {
+        switch (section) {
+        case 0:
+            return "timestamp";
+        case 1:
+            return "thread";
+        case 2:
+            return "level";
+        case 3:
+            return "file";
+        case 4:
+            return "line";
+        case 5:
+            return "function";
+        case 6:
+            return "message";
+        default:
+            return QVariant();
+        }
+    }else{
         return QVariant();
     }
+}
+
+
+QString LogModel::GetHorizontalHeaderName(int section) const
+{
+	return headerData(section, Qt::Horizontal, LogDisplayRole).toString();
 }
 
 Qt::ItemFlags LogModel::flags(const QModelIndex &index) const
@@ -76,11 +146,26 @@ Qt::ItemFlags LogModel::flags(const QModelIndex &index) const
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
-void LogModel::loadLogs(const QString &filePath)
+Q_INVOKABLE void LogModel::copyToClipboard(const QModelIndexList &indexes) const
 {
-    QFile file(filePath);
+    QGuiApplication::clipboard()->setMimeData(mimeData(indexes));
+}
+
+Q_INVOKABLE bool LogModel::pasteFromClipboard(const QModelIndex &targetIndex)
+{
+    const QMimeData *mimeData = QGuiApplication::clipboard()->mimeData();
+    // Consider using a QUndoCommand for the following call. It should store
+    // the (mime) data for the model items that are about to be overwritten, so
+    // that a later call to undo can revert it.
+    return dropMimeData(mimeData, Qt::CopyAction, -1, -1, targetIndex);
+}
+
+void LogModel::loadLogs(const QString &logFileUrl)
+{
+    QString logFilePath = QUrl(logFileUrl).toLocalFile();
+    QFile file(logFilePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "Cannot open log file:" << filePath;
+        qWarning() << "Cannot open log file:" << logFilePath;
         return;
     }
 
@@ -88,33 +173,110 @@ void LogModel::loadLogs(const QString &filePath)
     m_entries.clear();
 
     QTextStream in(&file);
-    in.setCodec("UTF-8");
+    in.setEncoding(QStringConverter::Utf8);
 
-    // Regular expression to parse:
-    // [2024-12-18 15:52:26.428][thread 16688][info][: ] etmc log started
-    // Group 1: timestamp, Group 2: thread, Group 3: level, Group 4: message.
-    QRegularExpression re("^\\[([^\\]]+)\\]\\[([^\\]]+)\\]\\[([^\\]]+)\\]\\[:\\s*\\]\\s*(.*)$");
+    LogEntry currentEntry;
+    bool inEntry = false;
 
     while (!in.atEnd()) {
         QString line = in.readLine();
-        QRegularExpressionMatch match = re.match(line);
-        LogEntry entry;
-        if (match.hasMatch()) {
-            entry.timestamp = match.captured(1);
-            entry.thread    = match.captured(2);
-            entry.level     = match.captured(3);
-            entry.message   = match.captured(4);
+
+        // 如果该行以 '[' 开头，则认为这是新记录的起始行
+        if(line.startsWith('[')) {
+            // 如果已有正在构建的记录，先保存
+            if(inEntry) {
+                m_entries.append(currentEntry);
+                currentEntry = LogEntry();
+            }
+
+            // 解析第一部分：timestamp
+            int pos1 = line.indexOf('[');
+            int pos2 = line.indexOf(']');
+            if(pos1 == -1 || pos2 == -1)
+                continue;
+            QString timestamp = line.mid(pos1 + 1, pos2 - pos1 - 1);
+
+            // 解析第二部分：thread
+            int pos3 = line.indexOf('[', pos2 + 1);
+            int pos4 = line.indexOf(']', pos3 + 1);
+            if(pos3 == -1 || pos4 == -1)
+                continue;
+            QString threadContent = line.mid(pos3 + 1, pos4 - pos3 - 1);
+            // 取最后一个单词作为线程号
+            QStringList threadTokens = threadContent.split(' ', Qt::SkipEmptyParts);
+            QString thread = threadTokens.isEmpty() ? "" : threadTokens.last();
+
+            // 解析第三部分：level
+            int pos5 = line.indexOf('[', pos4 + 1);
+            int pos6 = line.indexOf(']', pos5 + 1);
+            if(pos5 == -1 || pos6 == -1)
+                continue;
+            QString level = line.mid(pos5 + 1, pos6 - pos5 - 1);
+
+            // 解析第四部分：file, line, function
+            int pos7 = line.indexOf('[', pos6 + 1);
+            int pos8 = line.indexOf(']', pos7 + 1);
+            if(pos7 == -1 || pos8 == -1)
+                continue;
+            QString flf = line.mid(pos7 + 1, pos8 - pos7 - 1).trimmed();
+            QString fileName, lineNum, functionName;
+            // 如果第四部分为 "[: ]" 或 ":"
+            if(flf == ":"
+               || flf == ": "         // 根据日志格式，括号中可能只包含冒号和空格
+               || flf.isEmpty()) {
+                fileName = "";
+                lineNum = "";
+                functionName = "";
+            } else {
+                // 假设格式为 "main.cpp:174 operator()"
+                int colonIdx = flf.indexOf(':');
+                if(colonIdx == -1) {
+                    fileName = "";
+                    lineNum = "";
+                    functionName = "";
+                } else {
+                    fileName = flf.left(colonIdx).trimmed();
+                    int spaceIdx = flf.indexOf(' ', colonIdx + 1);
+                    if(spaceIdx == -1) {
+                        // 没有函数部分
+                        lineNum = flf.mid(colonIdx + 1).trimmed();
+                        functionName = "";
+                    } else {
+                        lineNum = flf.mid(colonIdx + 1, spaceIdx - colonIdx - 1).trimmed();
+                        functionName = flf.mid(spaceIdx + 1).trimmed();
+                    }
+                }
+            }
+
+            // 解析第五部分：message —— 从第四部分结束后到行末
+            QString message = line.mid(pos8 + 1).trimmed();
+
+            // 将解析结果填充到 currentEntry
+            currentEntry.timestamp = timestamp;
+            currentEntry.thread = thread;
+            currentEntry.level = level;
+            currentEntry.file = fileName;
+            currentEntry.line = lineNum;
+            currentEntry.function = functionName;
+            currentEntry.message = message;
+
+            inEntry = true;
         } else {
-            // Fallback: store entire line in message field.
-            entry.timestamp = "";
-            entry.thread    = "";
-            entry.level     = "";
-            entry.message   = line;
+            // 如果行不以 '[' 开头，则认为是上一条记录的 message 的延续
+            if(inEntry) {
+                currentEntry.message += "\n" + line;
+            }
+            else {
+                // 如果还未开始新记录，则忽略或另作处理
+                continue;
+            }
         }
-        m_entries.append(entry);
     }
+
+    if (inEntry)
+        m_entries.append(currentEntry);
 
     file.close();
     endResetModel();
-    emit logsChanged();
+
 }

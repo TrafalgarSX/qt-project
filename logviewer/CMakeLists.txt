@@ -15,6 +15,10 @@ qt_policy(SET QTP0004 NEW)
 
 list(APPEND PROJECT_SOURCES 
             ${PROJECT_SOURCE_DIR}/src/main.cpp
+            ${PROJECT_SOURCE_DIR}/src/SettingsManager.h ${PROJECT_SOURCE_DIR}/src/SettingsManager.cpp
+            ${PROJECT_SOURCE_DIR}/src/util/utils_screen.h ${PROJECT_SOURCE_DIR}/src/util/utils_screen.cpp
+            ${PROJECT_SOURCE_DIR}/src/util/utils_os_windows.h ${PROJECT_SOURCE_DIR}/src/util/utils_os_windows.cpp
+            ${PROJECT_SOURCE_DIR}/src/util/utils_os_linux.h ${PROJECT_SOURCE_DIR}/src/util/utils_os_linux.cpp
             )
 
 list(
@@ -35,7 +39,6 @@ list(
   Qt6::Qml
   Qt6::Quick
   Qt6::QuickControls2
-  OpenSSL::Crypto
 )
 
 # list(APPEND EXTRA_COMPILE_FLAGS "-Wno-deprecated-declarations")
@@ -54,12 +57,43 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE ${DEFINITIONS})
 
 target_compile_options(${PROJECT_NAME} PRIVATE ${EXTRA_COMPILE_FLAGS})
 
+set_source_files_properties(ui/Constants.qml PROPERTIES QT_QML_SINGLETON_TYPE true)
+set_source_files_properties(ui/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE true)
+set_source_files_properties(ui/ThemeEngine.qml PROPERTIES QT_QML_SINGLETON_TYPE true)
+
+
 qt_add_qml_module(${PROJECT_NAME}
-    URI ${PROJECT_NAME}
+    URI Logviewer
     VERSION 1.0
     QML_FILES
+        ui/Main.qml 
+        ui/LogDelegate.qml 
+        ui/Constants.qml 
+        ui/About.qml 
+        ui/Theme.qml 
+        ui/ThemeEngine.qml 
+        ui/controls/ScrollBarThemed.qml 
     SOURCES
+        ${PROJECT_SOURCE_DIR}/src/LogModel.h ${PROJECT_SOURCE_DIR}/src/LogModel.cpp
     RESOURCES
+        ui/icons/checkbox.svg
+        ui/icons/checkbox_blank.svg
+        ui/icons/darkmode.svg
+        ui/icons/filter.svg
+        ui/icons/help.svg
+        ui/icons/lightmode.svg
+        ui/icons/place.svg
+        ui/icons/qtlogo_green.png
+        ui/icons/qtlogo_white.png
+        ui/icons/rssiview.svg
+        ui/icons/satellite_small.png
+        ui/icons/satellite1.png
+        ui/icons/satellite2.png
+        ui/icons/search.svg
+        ui/icons/settings.svg
+        ui/icons/skyview.svg
+        ui/icons/sort.svg
+        ui/icons/tableview.svg
 )
 
 # NSIS packaging

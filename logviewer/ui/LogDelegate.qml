@@ -1,54 +1,75 @@
 import QtQuick
-import QtQuick.Controls
-import LogViewerConstants
+import QtQuick.Controls 2 as QC2
 
 // Wrap the delegate content in a Rectangle so we can set its background color.
 Rectangle {
-    id: logItem
-    // Set background using the hash lookup. If the log level is not found then use "transparent".
-    color: Constants.levelColorMap[model.logLevel] !== undefined ? Constants.levelColorMap[model.logLevel] : "transparent"
-    width: parent.width
-    height: 60
+    required property bool selected
+    required property bool current
+    required property var model
+    required property int row
+    required property int column
 
-    Row {
+    id: tableCellDelegate
+
+    implicitHeight: 32
+    border.color: "black"
+    border.width: 1
+
+    color: {
+        // Set background using the hash lookup. If the log level is not found then use "transparent".
+        // color: Constants.levelColorMap[model.logLevel] !== undefined ? Constants.levelColorMap[model.logLevel] : "transparent"
+        let origincolor = "transparent"
+        if(column == Constants.colorColumn) {
+            origincolor = Constants.levelColorMap[model.display] !== undefined ? Constants.levelColorMap[model.display] : "transparent"
+        }
+
+        let c = (selected || current) ? "lightblue" : origincolor
+        return c
+    }
+
+    TextMetrics {
+        id: textMetrics
+        text: display
+    }
+
+    Text{
+        anchors.centerIn: parent
         anchors.fill: parent
-        anchors.margins: Constants.horizontalMargin
-        spacing: 5
+        horizontalAlignment: column === 6 ? Text.AlignLeft : Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        font.weight: (selected || current) ? Font.DemiBold : Font.Normal
+        font.pointSize: 12
+        // font.family: fontMonospace
 
-        Text {
-            text: model.logTimestamp
-            width: Constants.timestampWidth
-            elide: Text.ElideRight
+        textFormat: Text.PlainText
+        text: display
+        elide: Text.ElideRight
+        color: "black"
+
+        // 键盘处理
+       MouseArea{
+            id: mouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            onClicked: {
+                logTableView.forceActiveFocus();
+                logTableView.selectionModel.select(logTableView.model.index(row, 0), ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+            }
         }
-        Rectangle {
-            width: Constants.separatorWidth; color: black
-            height: parent.height
-        }
-        Text {
-            text: model.logThread
-            width: Constants.threadWidth
-            elide: Text.ElideRight
-        }
-        Rectangle {
-            width: Constants.separatorWidth; color: black
-            height: parent.height
-        }
-        Text {
-            text: model.logLevel
-            width: Constants.levelWidth
-            color: "blue"
-            elide: Text.ElideRight
-        }
-        Rectangle {
-            width: Constants.separatorWidth; color: black
-            height: parent.height
-        }
-        Text {
-            text: model.logMessage
-            // Message field uses remaining width from header.
-            width: logHeader.width - Constants.totalFixedWidth
-            wrapMode: Text.WordWrap
-            horizontalAlignment: Text.AlignLeft
+        QC2.ToolTip {
+            delay: 250
+            parent: tableCellDelegate
+            visible: mouseArea.containsMouse && display !== "" && textMetrics.width > (tableCellDelegate.width-6)
+            contentItem: Text {
+                text: display
+                color: "#fcfcfc"
+            }
+            background: Rectangle {
+                color: "black"
+            }
         }
     }
+
+
+
 }

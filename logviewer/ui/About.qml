@@ -3,6 +3,9 @@ import QtQuick.Layouts
 
 Dialog {
     id: aboutDialog
+    width: 400
+    height: 300
+    anchors.centerIn: parent
     title: "About LogViewer"
     modal: true
     standardButtons: Dialog.Ok
