@@ -139,9 +139,49 @@ Qt::ItemFlags LogModel::flags(const QModelIndex &index) const
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
+QMimeData *LogModel::mimeData(const QModelIndexList &indexes) const
+{
+    QMimeData *mime = new QMimeData;
+
+    if(indexes.length() == 1) {
+        QModelIndex idx = indexes.at(0);
+        if (idx.isValid()) {
+            QVariant dataVariant = this->data(idx, LogDisplayRole);
+            mime->setText(dataVariant.toString());
+            return mime;
+        }
+    }
+
+    // 收集所有被选择的行号
+    QSet<int> rowSet;
+    for (const QModelIndex &idx : indexes) {
+        if (idx.isValid())
+            rowSet.insert(idx.row());
+    }
+
+    // 排序行号
+    QList<int> rows = rowSet.values();
+    std::sort(rows.begin(), rows.end());
+
+    QStringList lines;
+    // 对于每一行，将所有列合并成一行文本，列之间用制表符分隔
+    for (int row : rows) {
+        QStringList rowContents;
+        for (int col = 0; col < m_columnCount; ++col) {
+            QModelIndex idx = index(row, col);
+            QVariant dataVariant = this->data(idx, LogDisplayRole);
+            rowContents << dataVariant.toString();
+        }
+        lines << rowContents.join("\t");
+    }
+
+    QString plainText = lines.join("\n");
+    mime->setText(plainText);
+    return mime;
+}
+
 Q_INVOKABLE void LogModel::copyToClipboard(const QModelIndexList &indexes) const
 {
-    qDebug () << "copyToClipboard called";
     QGuiApplication::clipboard()->setMimeData(mimeData(indexes));
 }
 
@@ -264,4 +304,96 @@ void LogModel::loadLogs(const QString &logFileUrl)
     file.close();
     endResetModel();
 
+}
+
+// 辅助函数，根据字段名获取对应的日志条目字符串
+static QString getFieldValue(const LogEntry &entry, const QString &field)
+{
+    if(field == "timestamp")
+        return entry.timestamp;
+    else if(field == "thread")
+        return entry.thread;
+    else if(field == "level")
+        return entry.level;
+    else if(field == "file")
+        return entry.file;
+    else if(field == "line")
+        return entry.line;
+    else if(field == "message")
+        return entry.message;
+    return "";
+}
+
+QModelIndex LogModel::searchLogs(const QString &query, const QStringList &fields)
+{
+    m_searchResult.clear();
+    bool searchAll = fields.size() == 6 ? true : false;
+    for (int row = 0; row < m_entries.size(); ++row) {
+        const LogEntry &entry = m_entries.at(row);
+        bool match = false;
+        // 遍历全部字段，如果searchAll指定全部，或者该字段包含在fields中就进行匹配
+        if (searchAll || fields.contains("timestamp", Qt::CaseInsensitive)) {
+            if (entry.timestamp.contains(query, Qt::CaseInsensitive))
+                match = true;
+        }
+        if (!match && (searchAll || fields.contains("thread", Qt::CaseInsensitive))) {
+            if (entry.thread.contains(query, Qt::CaseInsensitive))
+                match = true;
+        }
+        if (!match && (searchAll || fields.contains("level", Qt::CaseInsensitive))) {
+            if (entry.level.contains(query, Qt::CaseInsensitive))
+                match = true;
+        }
+        if (!match && (searchAll || fields.contains("file", Qt::CaseInsensitive))) {
+            if (entry.file.contains(query, Qt::CaseInsensitive))
+                match = true;
+        }
+        if (!match && (searchAll || fields.contains("line", Qt::CaseInsensitive))) {
+            if (entry.line.contains(query, Qt::CaseInsensitive))
+                match = true;
+        }
+        if (!match && (searchAll || fields.contains("message", Qt::CaseInsensitive))) {
+            if (entry.message.contains(query, Qt::CaseInsensitive))
+                match = true;
+        }
+        if (match) {
+            QModelIndex idx = index(row, 0);
+            if (idx.isValid())
+                m_searchResult.append(idx);
+        }
+    }
+    if (!m_searchResult.isEmpty())
+        return m_searchResult.first();
+    return QModelIndex();
+}
+
+QModelIndex LogModel::nextSearchResult(const QModelIndex &currentIndex)
+{
+    if (m_searchResult.isEmpty())
+        return QModelIndex();
+    // 查找当前索引所在搜索结果集的位置
+    int pos = -1;
+    for (int i = 0; i < m_searchResult.size(); ++i) {
+        if(m_searchResult.at(i).row() == currentIndex.row()){
+            pos = i;
+            break;
+        }
+    }
+    int nextPos = (pos + 1) % m_searchResult.size();
+    return m_searchResult.at(nextPos);
+}
+
+QModelIndex LogModel::prevSearchResult(const QModelIndex &currentIndex)
+{
+    if (m_searchResult.isEmpty())
+        return QModelIndex();
+    int pos = -1;
+    for (int i = 0; i < m_searchResult.size(); ++i) {
+        if(m_searchResult.at(i).row() == currentIndex.row()){
+            pos = i;
+            break;
+        }
+    }
+    int prevPos = (pos - 1 + m_searchResult.size()) % m_searchResult.size();
+    return m_searchResult.at(prevPos);
 }

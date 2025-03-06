@@ -49,6 +49,14 @@ ApplicationWindow {
                 checkable: true
             }
             MenuItem {
+                text: "Filter file"
+                checkable: true
+            }
+            MenuItem {
+                text: "Filter line"
+                checkable: true
+            }
+            MenuItem {
                 text: "Filter Message"
                 checkable: true
             }
@@ -172,9 +180,7 @@ ApplicationWindow {
                 id: searchField
                 placeholderText: qsTr("Search")
                 Layout.fillWidth: true
-                onTextChanged: {
-                    console.log("search: ", searchField.text)
-                }
+                onEditingFinished: { searchDelayTimer.restart() }
             }
             IconButton {
                 selected: filterMenu.visible
@@ -182,6 +188,58 @@ ApplicationWindow {
                 Layout.preferredHeight: searchField.implicitHeight
                 Layout.preferredWidth: Layout.preferredHeight
                 onClicked: filterMenu.open()
+            }
+            IconButton {
+                id: prevSearchResult
+                icon.source: "icons/prev.svg" // replace icon if desired
+                Layout.preferredHeight: searchField.implicitHeight
+                Layout.preferredWidth: Layout.preferredHeight
+                onClicked: {
+                    var idx = logModel.prevSearchResult(logTableView.selectionModel.currentIndex)
+                    if(idx.isValid){
+                        logTableView.selectionModel.select(idx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+                        logTableView.selectionModel.setCurrentIndex(idx, ItemSelectionModel.Current)
+                        logTableView.positionViewAtRow(idx.row, TableView.Contain)
+                    }
+                }
+            }
+            IconButton {
+                id: nextSearchResult
+                icon.source: "icons/next.svg" // replace icon if desired
+                Layout.preferredHeight: searchField.implicitHeight
+                Layout.preferredWidth: Layout.preferredHeight
+                onClicked: {
+                    var idx = logModel.nextSearchResult(logTableView.selectionModel.currentIndex)
+                    if(idx.isValid){
+                        logTableView.selectionModel.select(idx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+                        logTableView.selectionModel.setCurrentIndex(idx, ItemSelectionModel.Current)
+                        logTableView.positionViewAtRow(idx.row, TableView.Contain)
+                    }
+                }
+            }
+        }
+        // 新增延迟定时器，用于在输入结束后再搜索
+        Timer {
+            id: searchDelayTimer
+            interval: 200
+            repeat: false
+            onTriggered: {
+                var fields = []
+                // 从 filterMenu 中收集被选中的搜索字段（假设每个CheckElement的text就是字段名称）
+                for (var i = 0; i < filterLayout.children.length; i++) {
+                    var child = filterLayout.children[i]
+                    if(child.text && child.checked)
+                        fields.push(child.text.toLowerCase())
+                }
+                var resultIdx = logModel.searchLogs(searchField.text, fields)
+                console.log("searchLogs end")
+                console.log("search result: ", resultIdx.valid)
+                if(resultIdx.valid){
+                    console.log("search result: ", resultIdx.row)
+                    logTableView.selectionModel.select(resultIdx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+                    logTableView.selectionModel.setCurrentIndex(resultIdx, ItemSelectionModel.Current)
+                    logTableView.positionViewAtRow(resultIdx.row, TableView.Contain)
+                }
             }
         }
     }
@@ -232,6 +290,7 @@ ApplicationWindow {
         boundsBehavior: Flickable.OvershootBounds
         clip: true
         interactive: true
+        keyNavigationEnabled: false
 
         columnWidthProvider: function(column) {
             if (column === 0)
@@ -274,22 +333,62 @@ ApplicationWindow {
 
         Keys.onPressed: (event) => {
             if (event.key === Qt.Key_Up) {
-                var newRow = logTableView.selectionModel.selectedIndexes[0].row - 1;
+                var curIdx = logTableView.selectionModel.currentIndex;
+                var newRow = curIdx.row - 1;
                 if (newRow < 0)
                     newRow = 0;
-
-                logTableView.ensureVisible(model.index(newRow, 0))
                 logTableView.selectionModel.select(model.index(newRow, 0), 
                     ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+
+                logTableView.selectionModel.setCurrentIndex(
+                    logTableView.model.index(newRow, curIdx.column),
+                    ItemSelectionModel.Current
+                );
+                logTableView.positionViewAtRow(newRow, TableView.Contain)
                 event.accepted = true;
             } else if (event.key === Qt.Key_Down) {
-                var newRow = logTableView.selectionModel.selectedIndexes[0].row + 1;
+                var curIdx = logTableView.selectionModel.currentIndex;
+                var newRow = curIdx.row + 1;
                 if (newRow >= model.rowCount())
                     newRow = model.rowCount() - 1;
 
-                logTableView.ensureVisible(model.index(newRow, 0))
                 logTableView.selectionModel.select(model.index(newRow, 0), 
                     ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+                logTableView.selectionModel.setCurrentIndex(
+                    logTableView.model.index(newRow, curIdx.column),
+                    ItemSelectionModel.Current
+                );
+                logTableView.positionViewAtRow(newRow, TableView.Contain)
+                event.accepted = true;
+            } else if (event.key === Qt.Key_Left) {
+                var curIdx = logTableView.selectionModel.currentIndex;
+                var newCol = curIdx.column - 1;
+                if (newCol < 0)
+                    newCol = 0;
+                var newIndex = model.index(curIdx.row, newCol);
+                logTableView.selectionModel.select(
+                    newIndex,
+                    ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current
+                );
+                logTableView.selectionModel.setCurrentIndex(
+                    logTableView.model.index(curIdx.row, newCol),
+                    ItemSelectionModel.Current
+                );
+                event.accepted = true;
+            } else if (event.key === Qt.Key_Right) {
+                var curIdx = logTableView.selectionModel.currentIndex;
+                var newCol = curIdx.column + 1;
+                if (newCol >= model.columnCount())
+                    newCol = model.columnCount() - 1;
+                var newIndex = model.index(curIdx.row, newCol);
+                logTableView.selectionModel.select(
+                    newIndex,
+                    ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current
+                );
+                logTableView.selectionModel.setCurrentIndex(
+                    logTableView.model.index(curIdx.row, newCol),
+                    ItemSelectionModel.Current
+                );
                 event.accepted = true;
             }
         }
@@ -336,6 +435,8 @@ ApplicationWindow {
         {"name": "Timestamp"},
         {"name": "thread"},
         {"name": "level"},
+        {"name": "file"},
+        {"name": "line"},
         {"name": "message"},
     ]
 

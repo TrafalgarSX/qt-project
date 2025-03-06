@@ -78,6 +78,9 @@ qt_add_qml_module(${PROJECT_NAME}
     SOURCES
         ${PROJECT_SOURCE_DIR}/src/LogModel.h ${PROJECT_SOURCE_DIR}/src/LogModel.cpp
     RESOURCES
+        ui/icons/next.svg
+        ui/icons/prev.svg
+        ui/icons/search.svg
         ui/icons/checkbox.svg
         ui/icons/checkbox_blank.svg
         ui/icons/darkmode.svg
@@ -91,7 +94,6 @@ qt_add_qml_module(${PROJECT_NAME}
         ui/icons/satellite_small.png
         ui/icons/satellite1.png
         ui/icons/satellite2.png
-        ui/icons/search.svg
         ui/icons/settings.svg
         ui/icons/skyview.svg
         ui/icons/sort.svg

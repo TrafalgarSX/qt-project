@@ -46,14 +46,42 @@ Rectangle {
         elide: Text.ElideRight
         color: "black"
 
-        // 键盘处理
        MouseArea{
+            property bool doubleClickReceived: false
+
             id: mouseArea
             anchors.fill: parent
+            acceptedButtons: Qt.LeftButton
             hoverEnabled: true
+
             onClicked: {
+                // 如果没有双击，就认为是单击：选中整行
+                if (!doubleClickReceived) {
+                    logTableView.forceActiveFocus();
+                    logTableView.selectionModel.select(
+                        logTableView.model.index(row, 0),
+                        ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows
+                    );
+                    logTableView.selectionModel.setCurrentIndex(
+                        logTableView.model.index(row, column),
+                        ItemSelectionModel.NoUpdate
+                    );
+                }
+                doubleClickReceived = false;
+            }
+
+            onDoubleClicked: {
+                // 双击以后，只选中当前 cell
+                doubleClickReceived = true;
                 logTableView.forceActiveFocus();
-                logTableView.selectionModel.select(logTableView.model.index(row, 0), ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+                logTableView.selectionModel.select(
+                    logTableView.model.index(row, column),
+                    ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current
+                );
+                logTableView.selectionModel.setCurrentIndex(
+                    logTableView.model.index(row, column),
+                    ItemSelectionModel.NoUpdate
+                );
             }
         }
         QC2.ToolTip {
