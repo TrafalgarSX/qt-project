@@ -35,7 +35,7 @@ Rectangle {
     Text{
         anchors.centerIn: parent
         anchors.fill: parent
-        horizontalAlignment: column === 6 ? Text.AlignLeft : Text.AlignHCenter
+        horizontalAlignment: column === Constants.messageColumn ? Text.AlignLeft : Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         font.weight: (selected || current) ? Font.DemiBold : Font.Normal
         font.pointSize: 12

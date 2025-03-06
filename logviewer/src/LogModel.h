@@ -11,7 +11,6 @@ struct LogEntry {
     QString level;
     QString file;
     QString line;
-    QString function;
     QString message;
 };
 
@@ -50,6 +49,7 @@ signals:
 
 private:
     QVector<LogEntry> m_entries;
+    const int m_columnCount = 6;
 };
 
 #endif // LOGMODEL_H

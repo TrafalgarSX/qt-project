@@ -25,7 +25,7 @@ QHash<int, QByteArray> LogModel::roleNames() const
 
 QModelIndex LogModel::index(int row, int column, const QModelIndex &parent) const
 {
-    if (parent.isValid() || row < 0 || row >= m_entries.size() || column < 0 || column >= 7)
+    if (parent.isValid() || row < 0 || row >= m_entries.size() || column < 0 || column >= m_columnCount)
         return QModelIndex();
     // 将 row 与 column 存储在内部指针中（如果需要，可传递数据）
 
@@ -49,9 +49,6 @@ QModelIndex LogModel::index(int row, int column, const QModelIndex &parent) cons
             data = &entry->line;
             break;
         case 5:
-            data = &entry->function;
-            break;
-        case 6:
             data = &entry->message;
             break;
     }
@@ -74,7 +71,7 @@ int LogModel::rowCount(const QModelIndex &parent) const
 int LogModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
-    return 7;
+    return m_columnCount;
 }
 
 QVariant LogModel::data(const QModelIndex &index, int role) const
@@ -97,8 +94,6 @@ QVariant LogModel::data(const QModelIndex &index, int role) const
         case 4:
             return entry.line;
         case 5:
-            return entry.function;
-        case 6:
             return entry.message;
         }
     }
@@ -122,8 +117,6 @@ QVariant LogModel::headerData(int section, Qt::Orientation orientation,
         case 4:
             return "line";
         case 5:
-            return "function";
-        case 6:
             return "message";
         default:
             return QVariant();
@@ -148,6 +141,7 @@ Qt::ItemFlags LogModel::flags(const QModelIndex &index) const
 
 Q_INVOKABLE void LogModel::copyToClipboard(const QModelIndexList &indexes) const
 {
+    qDebug () << "copyToClipboard called";
     QGuiApplication::clipboard()->setMimeData(mimeData(indexes));
 }
 
@@ -228,7 +222,7 @@ void LogModel::loadLogs(const QString &logFileUrl)
                 lineNum = "";
                 functionName = "";
             } else {
-                // 假设格式为 "main.cpp:174 operator()"
+                // 假设格式为 "main.cpp:174"
                 int colonIdx = flf.indexOf(':');
                 if(colonIdx == -1) {
                     fileName = "";
@@ -236,15 +230,7 @@ void LogModel::loadLogs(const QString &logFileUrl)
                     functionName = "";
                 } else {
                     fileName = flf.left(colonIdx).trimmed();
-                    int spaceIdx = flf.indexOf(' ', colonIdx + 1);
-                    if(spaceIdx == -1) {
-                        // 没有函数部分
-                        lineNum = flf.mid(colonIdx + 1).trimmed();
-                        functionName = "";
-                    } else {
-                        lineNum = flf.mid(colonIdx + 1, spaceIdx - colonIdx - 1).trimmed();
-                        functionName = flf.mid(spaceIdx + 1).trimmed();
-                    }
+                    lineNum = flf.mid(colonIdx + 1).trimmed();
                 }
             }
 
@@ -257,7 +243,6 @@ void LogModel::loadLogs(const QString &logFileUrl)
             currentEntry.level = level;
             currentEntry.file = fileName;
             currentEntry.line = lineNum;
-            currentEntry.function = functionName;
             currentEntry.message = message;
 
             inEntry = true;

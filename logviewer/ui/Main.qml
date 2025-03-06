@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls 
 import QtQuick.Layouts 
 import QtQuick.Dialogs
-import Qt.labs.platform
+import Qt.labs.platform as Platform
 import QtPositioning
 import QtQuick.Controls.Basic as QC
 
@@ -13,7 +13,7 @@ ApplicationWindow {
     height: 768
     title: "LogViewer"
 
-    MenuBar {
+    menuBar: MenuBar {
         id: menuBar
         Menu {
             title: "File"
@@ -245,8 +245,6 @@ ApplicationWindow {
             else if (column === 4)
                 return Constants.lineWidth;
             else if (column === 5)
-                return Constants.functionWidth;
-            else if (column === 6)
                 return root.width - (Constants.totalFixedWidth);
             else 
                 return -1
@@ -279,6 +277,8 @@ ApplicationWindow {
                 var newRow = logTableView.selectionModel.selectedIndexes[0].row - 1;
                 if (newRow < 0)
                     newRow = 0;
+
+                logTableView.ensureVisible(model.index(newRow, 0))
                 logTableView.selectionModel.select(model.index(newRow, 0), 
                     ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
                 event.accepted = true;
@@ -286,6 +286,8 @@ ApplicationWindow {
                 var newRow = logTableView.selectionModel.selectedIndexes[0].row + 1;
                 if (newRow >= model.rowCount())
                     newRow = model.rowCount() - 1;
+
+                logTableView.ensureVisible(model.index(newRow, 0))
                 logTableView.selectionModel.select(model.index(newRow, 0), 
                     ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
                 event.accepted = true;
@@ -324,9 +326,9 @@ ApplicationWindow {
     FileDialog {
         id: fileDialog
         title: "Open Log File"
-        nameFilters: ["Log files (*.log)", "All files (*.*)"]
+        nameFilters: ["Log files (*.txt)", "Log files (*.log)", "All files (*.*)"]
         onAccepted: {
-            logModel.loadLogs(fileDialog.file)
+            logModel.loadLogs(selectedFile)
         }
     }
 

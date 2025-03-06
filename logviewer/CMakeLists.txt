@@ -4,8 +4,9 @@ project(logviewer LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 DBus)
 find_package(OpenSSL REQUIRED)
 
 qt_standard_project_setup(REQUIRES 6.5)
@@ -39,6 +40,7 @@ list(
   Qt6::Qml
   Qt6::Quick
   Qt6::QuickControls2
+  Qt6::DBus
 )
 
 # list(APPEND EXTRA_COMPILE_FLAGS "-Wno-deprecated-declarations")

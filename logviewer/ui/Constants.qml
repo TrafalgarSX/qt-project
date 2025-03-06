@@ -3,17 +3,18 @@ import QtQuick
 
 QtObject {
     // Fixed UI widths.
-    readonly property int timestampWidth: 200
+    readonly property int timestampWidth: 250
     readonly property int threadWidth: 60
     readonly property int levelWidth: 60
-    readonly property int fileWidth: 80
+    readonly property int fileWidth: 200
     readonly property int lineWidth: 50
-    readonly property int functionWidth: 100
-    readonly property int totalFixedWidth: timestampWidth + threadWidth + levelWidth + fileWidth + lineWidth + functionWidth
+    readonly property int totalFixedWidth: timestampWidth + threadWidth + levelWidth + fileWidth + lineWidth
 
     readonly property int separatorWidth: 1
     readonly property int horizontalMargin: 10
-    readonly property int colorColumn: 2
+
+    readonly property int colorColumn: 2 // levelColumn
+    readonly property int messageColumn: 5  
 
     readonly property string displayRoleName: "display"
 

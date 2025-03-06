@@ -39,27 +39,23 @@
                 "PATH": "$penv{PATH};C:/Qt/6.8.1/msvc2022_64/bin"
 			}
 		},
-        {
-			"name": "vs2019-v64-ninja-presets",
-			"displayName": "VS-amd64-Ninja-v142",
-			"description": "Using compilers(v142) for Visual Studio 17 2022 (x64 architecture)",
-			"generator": "Ninja Multi-Config",
+		{
+			"name": "gcc-64-presets",
+			"displayName": "GCC-x64",
+			"description": "Using compilers for GCC (x64 architecture)",
+			"generator": "Ninja",
 			"binaryDir": "${sourceDir}/${presetName}",
-      "architecture":{
-			    "strategy": "external",
-                "value": "x64"
-            },
-			"toolset": {
-				"strategy": "external",
-				"value": "v142,host=x64"
-			},
 			"cacheVariables": {
-				"CMAKE_TOOLCHAIN_FILE": "C:/workspace/opensource/vcpkg/scripts/buildsystems/vcpkg.cmake",
+				"CMAKE_TOOLCHAIN_FILE": "/home/data/vcpkg/scripts/buildsystems/vcpkg.cmake",
 				"CMAKE_INSTALL_PREFIX": "${sourceDir}/${presetName}",
-				"CMAKE_CXX_COMPILER": "cl.exe",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "TRUE"
+				"CMAKE_CXX_COMPILER": "g++",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
+			},
+			"environment": {
+                "PATH": "$penv{PATH};/usr/lib/"
 			}
 		}
+  
 	],
     "buildPresets": [
         {
@@ -74,6 +70,20 @@
             "description": "Debug build using vs2019-v64-ninja-presets",
             "displayName": "Debug 64-bit",
             "configurePreset": "vs2022-v64-ninja-presets",
+            "configuration": "Debug"
+        },
+        {
+            "name": "Release64-arch",
+            "description": "Release build using gcc-64-presets",
+            "displayName": "Release 64-bit Arch",
+            "configurePreset": "gcc-64-presets",
+            "configuration": "Release"
+        },
+        {
+            "name": "Debug64-arch",
+            "description": "Debug build using gcc-64-presets",
+            "displayName": "Debug 64-bit Arch",
+            "configurePreset": "gcc-64-presets",
             "configuration": "Debug"
         }
     ]
