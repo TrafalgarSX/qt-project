@@ -328,33 +328,44 @@ QModelIndex LogModel::searchLogs(const QString &query, const QStringList &fields
 {
     m_searchResult.clear();
     bool searchAll = fields.size() == 6 ? true : false;
+    QString lowerQuery = query.toLower(); // precompute lower-case query
     for (int row = 0; row < m_entries.size(); ++row) {
         const LogEntry &entry = m_entries.at(row);
         bool match = false;
-        // 遍历全部字段，如果searchAll指定全部，或者该字段包含在fields中就进行匹配
-        if (searchAll || fields.contains("timestamp", Qt::CaseInsensitive)) {
-            if (entry.timestamp.contains(query, Qt::CaseInsensitive))
+        if (searchAll) {
+            QString combined = entry.timestamp + "\t" +
+                               entry.thread + "\t" +
+                               entry.level + "\t" +
+                               entry.file + "\t" +
+                               entry.line + "\t" +
+                               entry.message;
+            if (combined.toLower().contains(lowerQuery))
                 match = true;
-        }
-        if (!match && (searchAll || fields.contains("thread", Qt::CaseInsensitive))) {
-            if (entry.thread.contains(query, Qt::CaseInsensitive))
-                match = true;
-        }
-        if (!match && (searchAll || fields.contains("level", Qt::CaseInsensitive))) {
-            if (entry.level.contains(query, Qt::CaseInsensitive))
-                match = true;
-        }
-        if (!match && (searchAll || fields.contains("file", Qt::CaseInsensitive))) {
-            if (entry.file.contains(query, Qt::CaseInsensitive))
-                match = true;
-        }
-        if (!match && (searchAll || fields.contains("line", Qt::CaseInsensitive))) {
-            if (entry.line.contains(query, Qt::CaseInsensitive))
-                match = true;
-        }
-        if (!match && (searchAll || fields.contains("message", Qt::CaseInsensitive))) {
-            if (entry.message.contains(query, Qt::CaseInsensitive))
-                match = true;
+        } else {
+            if (!match && fields.contains("timestamp", Qt::CaseInsensitive)) {
+                if (entry.timestamp.toLower().contains(lowerQuery))
+                    match = true;
+            }
+            if (!match && fields.contains("thread", Qt::CaseInsensitive)) {
+                if (entry.thread.toLower().contains(lowerQuery))
+                    match = true;
+            }
+            if (!match && fields.contains("level", Qt::CaseInsensitive)) {
+                if (entry.level.toLower().contains(lowerQuery))
+                    match = true;
+            }
+            if (!match && fields.contains("file", Qt::CaseInsensitive)) {
+                if (entry.file.toLower().contains(lowerQuery))
+                    match = true;
+            }
+            if (!match && fields.contains("line", Qt::CaseInsensitive)) {
+                if (entry.line.toLower().contains(lowerQuery))
+                    match = true;
+            }
+            if (!match && fields.contains("message", Qt::CaseInsensitive)) {
+                if (entry.message.toLower().contains(lowerQuery))
+                    match = true;
+            }
         }
         if (match) {
             QModelIndex idx = index(row, 0);
@@ -372,28 +383,28 @@ QModelIndex LogModel::nextSearchResult(const QModelIndex &currentIndex)
     if (m_searchResult.isEmpty())
         return QModelIndex();
     // 查找当前索引所在搜索结果集的位置
-    int pos = -1;
-    for (int i = 0; i < m_searchResult.size(); ++i) {
-        if(m_searchResult.at(i).row() == currentIndex.row()){
-            pos = i;
-            break;
+
+    for(const QModelIndex &idx : m_searchResult){
+        if(idx.row() == currentIndex.row()){
+            int pos = m_searchResult.indexOf(idx);
+            int nextPos = (pos + 1) % m_searchResult.size();
+            return m_searchResult.at(nextPos);
         }
     }
-    int nextPos = (pos + 1) % m_searchResult.size();
-    return m_searchResult.at(nextPos);
+    return QModelIndex();
 }
 
 QModelIndex LogModel::prevSearchResult(const QModelIndex &currentIndex)
 {
     if (m_searchResult.isEmpty())
         return QModelIndex();
-    int pos = -1;
-    for (int i = 0; i < m_searchResult.size(); ++i) {
-        if(m_searchResult.at(i).row() == currentIndex.row()){
-            pos = i;
-            break;
+
+    for(const QModelIndex &idx : m_searchResult){
+        if(idx.row() == currentIndex.row()){
+            int pos = m_searchResult.indexOf(idx);
+            int prevPos = (pos - 1 + m_searchResult.size()) % m_searchResult.size();
+            return m_searchResult.at(prevPos);
         }
     }
-    int prevPos = (pos - 1 + m_searchResult.size()) % m_searchResult.size();
-    return m_searchResult.at(prevPos);
+    return QModelIndex();
 }

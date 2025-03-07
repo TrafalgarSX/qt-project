@@ -26,7 +26,7 @@
 			"name": "vs2022-v64-ninja-presets",
 			"displayName": "VS-amd64-Ninja-v143",
 			"description": "Using compilers for Visual Studio 17 2022 (x64 architecture)",
-			"generator": "Ninja",
+			"generator": "Ninja Multi-Config",
 			"binaryDir": "${sourceDir}/${presetName}",
 			"cacheVariables": {
 				"CMAKE_TOOLCHAIN_FILE": "C:/workspace/opensource/vcpkg/scripts/buildsystems/vcpkg.cmake",
@@ -43,7 +43,7 @@
 			"name": "gcc-64-presets",
 			"displayName": "GCC-x64",
 			"description": "Using compilers for GCC (x64 architecture)",
-			"generator": "Ninja",
+			"generator": "Ninja Multi-Config",
 			"binaryDir": "${sourceDir}/${presetName}",
 			"cacheVariables": {
 				"CMAKE_TOOLCHAIN_FILE": "/home/data/vcpkg/scripts/buildsystems/vcpkg.cmake",

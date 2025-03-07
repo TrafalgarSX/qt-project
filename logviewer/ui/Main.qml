@@ -196,10 +196,10 @@ ApplicationWindow {
                 Layout.preferredWidth: Layout.preferredHeight
                 onClicked: {
                     var idx = logModel.prevSearchResult(logTableView.selectionModel.currentIndex)
-                    if(idx.isValid){
+                    if(idx.valid){
                         logTableView.selectionModel.select(idx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
                         logTableView.selectionModel.setCurrentIndex(idx, ItemSelectionModel.Current)
-                        logTableView.positionViewAtRow(idx.row, TableView.Contain)
+                        logTableView.positionViewAtRow(idx.row, TableView.Contain | TableView.AlignVCenter)
                     }
                 }
             }
@@ -210,10 +210,10 @@ ApplicationWindow {
                 Layout.preferredWidth: Layout.preferredHeight
                 onClicked: {
                     var idx = logModel.nextSearchResult(logTableView.selectionModel.currentIndex)
-                    if(idx.isValid){
+                    if(idx.valid){
                         logTableView.selectionModel.select(idx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
                         logTableView.selectionModel.setCurrentIndex(idx, ItemSelectionModel.Current)
-                        logTableView.positionViewAtRow(idx.row, TableView.Contain)
+                        logTableView.positionViewAtRow(idx.row, TableView.Contain | TableView.AlignVCenter)
                     }
                 }
             }
@@ -233,9 +233,7 @@ ApplicationWindow {
                 }
                 var resultIdx = logModel.searchLogs(searchField.text, fields)
                 console.log("searchLogs end")
-                console.log("search result: ", resultIdx.valid)
                 if(resultIdx.valid){
-                    console.log("search result: ", resultIdx.row)
                     logTableView.selectionModel.select(resultIdx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
                     logTableView.selectionModel.setCurrentIndex(resultIdx, ItemSelectionModel.Current)
                     logTableView.positionViewAtRow(resultIdx.row, TableView.Contain)
@@ -442,8 +440,8 @@ ApplicationWindow {
 
     MenuPopup {
         id: filterMenu
-        x: root.width - filterMenu.width - Theme.defaultSpacing
-        y: logTableView.y - Theme.defaultSpacing
+        x: root.width - filterMenu.width - 2 * Theme.defaultSpacing
+        y: horizontalHeader.y - Theme.defaultSpacing
         ColumnLayout {
             id: filterLayout
             anchors.fill: parent
@@ -463,7 +461,6 @@ ApplicationWindow {
                     text: modelData.name
                     Layout.alignment: Qt.AlignRight
                     onCheckedChanged: {
-                        console.log("checked: ", modelData.name)
                     }
                 }
             }
