@@ -16,6 +16,7 @@ qt_policy(SET QTP0004 NEW)
 
 list(APPEND PROJECT_SOURCES 
             ${PROJECT_SOURCE_DIR}/src/main.cpp
+            ${PROJECT_SOURCE_DIR}/src/applicationsettings.h ${PROJECT_SOURCE_DIR}/src/applicationsettings.cpp
             ${PROJECT_SOURCE_DIR}/src/SettingsManager.h ${PROJECT_SOURCE_DIR}/src/SettingsManager.cpp
             ${PROJECT_SOURCE_DIR}/src/util/utils_screen.h ${PROJECT_SOURCE_DIR}/src/util/utils_screen.cpp
             ${PROJECT_SOURCE_DIR}/src/util/utils_os_windows.h ${PROJECT_SOURCE_DIR}/src/util/utils_os_windows.cpp
@@ -68,12 +69,14 @@ qt_add_qml_module(${PROJECT_NAME}
     URI Logviewer
     VERSION 1.0
     QML_FILES
-        ui/Main.qml 
-        ui/LogDelegate.qml 
-        ui/Constants.qml 
         ui/About.qml 
+        ui/Constants.qml 
+        ui/LogDelegate.qml 
+        ui/Main.qml 
         ui/Theme.qml 
         ui/ThemeEngine.qml 
+        ui/controls/IconSvg.qml
+        ui/controls/MenuBar.qml
         ui/controls/ScrollBarThemed.qml 
     SOURCES
         ${PROJECT_SOURCE_DIR}/src/LogModel.h ${PROJECT_SOURCE_DIR}/src/LogModel.cpp

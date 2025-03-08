@@ -8,7 +8,7 @@
 #include <QClipboard>
 
 LogModel::LogModel(QObject *parent)
-    : QAbstractItemModel(parent)
+    : QAbstractTableModel(parent)
 {
 }
 
@@ -100,11 +100,10 @@ QVariant LogModel::data(const QModelIndex &index, int role) const
     return QVariant();
 }
 
-QVariant LogModel::headerData(int section, Qt::Orientation orientation,
-                        int role) const
+QVariant LogModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if (Qt::Horizontal == orientation && role == LogDisplayRole)
-    {
+    qDebug() << "headerData:" << section << orientation << role;
+    if (orientation == Qt::Horizontal && role == LogDisplayRole) {
         switch (section) {
         case 0:
             return "timestamp";
@@ -121,11 +120,11 @@ QVariant LogModel::headerData(int section, Qt::Orientation orientation,
         default:
             return QVariant();
         }
-    }else{
-        return QVariant();
+    } else if (orientation == Qt::Vertical) {
+        return QString::number(section + 1).rightJustified(6, '0'); // 固定宽度6（用'0'填充）
     }
+    return QVariant();
 }
-
 
 QString LogModel::GetHorizontalHeaderName(int section) const
 {
@@ -306,6 +305,7 @@ void LogModel::loadLogs(const QString &logFileUrl)
 
 }
 
+
 // 辅助函数，根据字段名获取对应的日志条目字符串
 static QString getFieldValue(const LogEntry &entry, const QString &field)
 {
@@ -327,6 +327,10 @@ static QString getFieldValue(const LogEntry &entry, const QString &field)
 QModelIndex LogModel::searchLogs(const QString &query, const QStringList &fields)
 {
     m_searchResult.clear();
+    m_currentSearchIndex = -1;
+
+    static int count = 0;
+    qDebug() << "search count: " << ++count; 
     bool searchAll = fields.size() == 6 ? true : false;
     QString lowerQuery = query.toLower(); // precompute lower-case query
     for (int row = 0; row < m_entries.size(); ++row) {
@@ -373,38 +377,30 @@ QModelIndex LogModel::searchLogs(const QString &query, const QStringList &fields
                 m_searchResult.append(idx);
         }
     }
-    if (!m_searchResult.isEmpty())
+    if (!m_searchResult.isEmpty()) {
+        m_currentSearchIndex = 0;
         return m_searchResult.first();
-    return QModelIndex();
-}
-
-QModelIndex LogModel::nextSearchResult(const QModelIndex &currentIndex)
-{
-    if (m_searchResult.isEmpty())
-        return QModelIndex();
-    // 查找当前索引所在搜索结果集的位置
-
-    for(const QModelIndex &idx : m_searchResult){
-        if(idx.row() == currentIndex.row()){
-            int pos = m_searchResult.indexOf(idx);
-            int nextPos = (pos + 1) % m_searchResult.size();
-            return m_searchResult.at(nextPos);
-        }
     }
     return QModelIndex();
 }
 
-QModelIndex LogModel::prevSearchResult(const QModelIndex &currentIndex)
+QModelIndex LogModel::nextSearchResult()
 {
-    if (m_searchResult.isEmpty())
+    if (m_searchResult.isEmpty()) {
         return QModelIndex();
-
-    for(const QModelIndex &idx : m_searchResult){
-        if(idx.row() == currentIndex.row()){
-            int pos = m_searchResult.indexOf(idx);
-            int prevPos = (pos - 1 + m_searchResult.size()) % m_searchResult.size();
-            return m_searchResult.at(prevPos);
-        }
     }
-    return QModelIndex();
+
+    m_currentSearchIndex = (m_currentSearchIndex + 1) % m_searchResult.size();
+    return m_searchResult.at(m_currentSearchIndex);
 }
+
+QModelIndex LogModel::prevSearchResult()
+{
+    if (m_searchResult.isEmpty()) {
+        return QModelIndex();
+    }
+
+    m_currentSearchIndex = (m_currentSearchIndex - 1 + m_searchResult.size()) % m_searchResult.size();
+    return m_searchResult.at(m_currentSearchIndex);
+}
+

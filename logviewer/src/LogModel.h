@@ -4,6 +4,7 @@
 #include <QtQml>
 #include <QAbstractItemModel>
 #include <QVector>
+#include <QSet>
 
 struct LogEntry {
     QString timestamp;
@@ -14,7 +15,8 @@ struct LogEntry {
     QString message;
 };
 
-class LogModel : public QAbstractItemModel
+// class LogModel : public QAbstractItemModel
+class LogModel : public QAbstractTableModel
 {
     Q_OBJECT
     QML_ELEMENT
@@ -29,11 +31,10 @@ public:
     Q_INVOKABLE void loadLogs(const QString &filePath);
     Q_INVOKABLE void copyToClipboard(const QModelIndexList &indexes) const;
     Q_INVOKABLE bool pasteFromClipboard(const QModelIndex &targetIndex);
-	Q_INVOKABLE QString GetHorizontalHeaderName(int section) const;
-    // 新增搜索接口，fields为需搜索的字段（例如 "timestamp", "level", ...），若为空则默认搜索全部
+    Q_INVOKABLE QString GetHorizontalHeaderName(int section) const;
     Q_INVOKABLE QModelIndex searchLogs(const QString &query, const QStringList &fields);
-    Q_INVOKABLE QModelIndex nextSearchResult(const QModelIndex &currentIndex);
-    Q_INVOKABLE QModelIndex prevSearchResult(const QModelIndex &currentIndex);
+    Q_INVOKABLE QModelIndex nextSearchResult();
+    Q_INVOKABLE QModelIndex prevSearchResult();
 
     // QAbstractItemModel interface
     QModelIndex index(int row, int column = 0, const QModelIndex &parent = QModelIndex()) const override;
@@ -45,7 +46,6 @@ public:
                         int role) const override;
     QMimeData *mimeData(const QModelIndexList &indexes) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
-
     QHash<int, QByteArray> roleNames() const override;
 
 signals:
@@ -54,7 +54,7 @@ signals:
 private:
     QVector<LogEntry> m_entries;
     const int m_columnCount = 6;
-    // 新增搜索结果存储变量，存储符合搜索条件的项（以column0的index为代表）
+    int m_currentSearchIndex = -1;
     QVector<QModelIndex> m_searchResult;
 };
 

@@ -6,72 +6,24 @@ import Qt.labs.platform as Platform
 import QtPositioning
 import QtQuick.Controls.Basic as QC
 
+import Logviewer 1.0 as LV
+
 ApplicationWindow {
     id: root
     visible: true
-    width: 1024
-    height: 768
-    title: "LogViewer"
+    width: 1600
+    height: 900
+    title: "Logviewer"
 
-    menuBar: MenuBar {
+    menuBar: LV.MenuBar {
         id: menuBar
-        Menu {
-            title: "File"
-            MenuItem {
-                text: "Open"
-                onTriggered: fileDialog.open()
-            }
-            MenuItem {
-                text: "Open Recent File"
-                // Implement recent file handling here.
-            }
-            MenuItem {
-                text: "Exit"
-                onTriggered: Qt.quit()
-            }
+        // 不直接绑定，而是在完成后赋值
+        Component.onCompleted: {
+             menuBar.logModel = logModel
+             menuBar.aboutDialog = aboutDialog
+             menuBar.fileDialog = fileDialog
+             menuBar.logTableView = logTableView
         }
-        Menu {
-            title: "Search"
-            MenuItem {
-                id: caseSensitiveCheck
-                text: "Case Sensitive"
-            }
-            MenuItem {
-                text: "Filter Timestamp"
-                checkable: true
-            }
-            MenuItem {
-                text: "Filter Thread"
-                checkable: true
-            }
-            MenuItem {
-                text: "Filter Level"
-                checkable: true
-            }
-            MenuItem {
-                text: "Filter file"
-                checkable: true
-            }
-            MenuItem {
-                text: "Filter line"
-                checkable: true
-            }
-            MenuItem {
-                text: "Filter Message"
-                checkable: true
-            }
-        }
-        Menu {
-            title: "Help"
-            MenuItem {
-                text: "About"
-                onTriggered: aboutDialog.open()
-            }
-        }
-    }
-
-    About {
-        id: aboutDialog
     }
 
     component SearchInput : QC.TextField {
@@ -195,7 +147,7 @@ ApplicationWindow {
                 Layout.preferredHeight: searchField.implicitHeight
                 Layout.preferredWidth: Layout.preferredHeight
                 onClicked: {
-                    var idx = logModel.prevSearchResult(logTableView.selectionModel.currentIndex)
+                    var idx = logModel.prevSearchResult()
                     if(idx.valid){
                         logTableView.selectionModel.select(idx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
                         logTableView.selectionModel.setCurrentIndex(idx, ItemSelectionModel.Current)
@@ -209,7 +161,7 @@ ApplicationWindow {
                 Layout.preferredHeight: searchField.implicitHeight
                 Layout.preferredWidth: Layout.preferredHeight
                 onClicked: {
-                    var idx = logModel.nextSearchResult(logTableView.selectionModel.currentIndex)
+                    var idx = logModel.nextSearchResult()
                     if(idx.valid){
                         logTableView.selectionModel.select(idx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
                         logTableView.selectionModel.setCurrentIndex(idx, ItemSelectionModel.Current)
@@ -221,7 +173,7 @@ ApplicationWindow {
         // 新增延迟定时器，用于在输入结束后再搜索
         Timer {
             id: searchDelayTimer
-            interval: 200
+            interval: 500
             repeat: false
             onTriggered: {
                 var fields = []
@@ -268,7 +220,7 @@ ApplicationWindow {
             anchors.fill: parent
             font.pointSize: 12
             font.weight: Font.Bold
-            color: "black"
+            color: Theme.textMainColor
             horizontalAlignment:Text.AlignHCenter
             verticalAlignment:Text.AlignVCenter
             text: model.display
@@ -276,13 +228,38 @@ ApplicationWindow {
         }
     }
 
+    VerticalHeaderView {
+        id: verticalHeader
+        anchors {
+            top: logTableView.top
+            leftMargin: Theme.defaultSpacing * 2
+        }
+        syncView: logTableView
+        clip: true
+        delegate: Rectangle{
+          border.color: "#848484"
+          color: "white"
+
+          implicitHeight: 32
+          Text{
+            anchors.fill: parent
+            font.pointSize: 9
+            font.weight: Font.Bold
+            color: Theme.textMainColor
+            horizontalAlignment:Text.AlignHCenter
+            verticalAlignment:Text.AlignVCenter
+            text: model.display
+          }
+        }
+
+    }
+
     TableView {
         id: logTableView 
         anchors {
             top: horizontalHeader.bottom
             bottom: parent.bottom
-            left: parent.left
-            leftMargin: Theme.defaultSpacing * 2
+            left: verticalHeader.right
             right: parent.right
         }
         boundsBehavior: Flickable.OvershootBounds
@@ -411,31 +388,15 @@ ApplicationWindow {
     SelectionRectangle {
         target: logTableView
     }
-    // 创建一个 LogModel 实例
-    LogModel {
-        id: logModel
-        Component.onCompleted: {
-            // 加载日志文件
-            console.log("LogModel completed")
-        }
-    }
-
-    FileDialog {
-        id: fileDialog
-        title: "Open Log File"
-        nameFilters: ["Log files (*.txt)", "Log files (*.log)", "All files (*.*)"]
-        onAccepted: {
-            logModel.loadLogs(selectedFile)
-        }
-    }
 
     property var filterModel: [
-        {"name": "Timestamp"},
+        {"name": "timestamp"},
         {"name": "thread"},
         {"name": "level"},
         {"name": "file"},
         {"name": "line"},
         {"name": "message"},
+        {"name": "caseInsensitive"},
     ]
 
     MenuPopup {
@@ -460,12 +421,35 @@ ApplicationWindow {
                     required property var modelData
                     text: modelData.name
                     Layout.alignment: Qt.AlignRight
-                    onCheckedChanged: {
-                    }
+                    checked: modelData.name === "timestamp" ? true : false
                 }
             }
         }
     }
 
+    // 创建一个 LogModel 实例
+    LogModel {
+        id: logModel
+        Component.onCompleted: {
+            // 加载日志文件
+            console.log("LogModel completed")
+        }
+    }
+
+    FileDialog {
+        id: fileDialog
+        title: "Open Log File"
+        nameFilters: ["Log files (*.txt)", "Log files (*.log)", "All files (*.*)"]
+        onAccepted: {
+            logModel.loadLogs(selectedFile)
+            settings.addRecentFile(selectedFile)
+        }
+    }
+
+    About {
+        id: aboutDialog
+        parent: Overlay.overlay
+        anchors.centerIn: parent
+    }
 
 }
