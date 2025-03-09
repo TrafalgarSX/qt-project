@@ -40,6 +40,9 @@ public:
     // 新增：后台更新 FTS 索引
     void updateFtsAsync();
 
+    // 新增方法：返回格式化日志详情文本
+    Q_INVOKABLE QString getLogDetail(int row) const;
+
     // QAbstractItemModel interface
     QModelIndex index(int row, int column = 0, const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex &index) const override;

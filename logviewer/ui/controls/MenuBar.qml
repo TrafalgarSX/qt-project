@@ -104,10 +104,27 @@ Controls.MenuBar {
         }
 
         MenuSeparator {}
+
         MenuItem {
             objectName: "quitMenuItem"
             text: qsTr("Quit Logviewer")
             onTriggered: Qt.quit()
+        }
+    }
+
+    Menu {
+        id: toolMenu
+        title: qsTr("Tool")
+
+        onClosed: logTableView.forceActiveFocus()
+
+        MenuItem {
+            objectName: "logDetailMenuItem"
+            //: Empty the list of recent files in the File menu.
+            text: qsTr("Log Detail")
+            onTriggered: {
+                logTableView.toggleLogDetail()
+            }
         }
     }
 

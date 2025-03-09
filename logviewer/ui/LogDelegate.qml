@@ -38,7 +38,7 @@ Rectangle {
         horizontalAlignment: column === Constants.messageColumn ? Text.AlignLeft : Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
         font.weight: (selected || current) ? Font.DemiBold : Font.Normal
-        font.pointSize: 12
+        font.pointSize: 10
 
         textFormat: Text.PlainText
         text: display

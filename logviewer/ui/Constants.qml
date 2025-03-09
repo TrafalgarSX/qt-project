@@ -3,10 +3,10 @@ import QtQuick
 
 QtObject {
     // Fixed UI widths.
-    readonly property int timestampWidth: 250
-    readonly property int threadWidth: 60
-    readonly property int levelWidth: 60
-    readonly property int fileWidth: 200
+    readonly property int timestampWidth: 180
+    readonly property int threadWidth: 55
+    readonly property int levelWidth: 50
+    readonly property int fileWidth: 180
     readonly property int lineWidth: 50
     readonly property int totalFixedWidth: timestampWidth + threadWidth + levelWidth + fileWidth + lineWidth
 

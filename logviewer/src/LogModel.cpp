@@ -481,3 +481,16 @@ QModelIndex LogModel::prevSearchResult()
     return m_searchResult.at(m_currentSearchIndex);
 }
 
+QString LogModel::getLogDetail(int row) const
+{
+    if (row < 0 || row >= m_entries.size())
+        return "";
+    const LogEntry &entry = m_entries.at(row);
+    // 这里将 file 当作 function 字段使用（或自行修改）
+    return "Timestamp: " + entry.timestamp + "\n" +
+           "Thread: " + entry.thread + "\n" +
+           "File: " + entry.file + "\n" +
+           "Line: " + entry.line + "\n" +
+           "Message:\n" + entry.message;
+}
+

@@ -5,6 +5,7 @@ import QtQuick.Dialogs
 import Qt.labs.platform as Platform
 import QtPositioning
 import QtQuick.Controls.Basic as QC
+import QtQuick.Effects
 
 import Logviewer 1.0 as LV
 
@@ -20,6 +21,7 @@ ApplicationWindow {
     property bool ftsLoading: true
     property int dotCount: 0
     property string loadingDots: ".".repeat(dotCount)
+    property bool logDetailVisible: false
 
     // 用 NumberAnimation 替代 Timer 自动循环更新 dotCount
     NumberAnimation on dotCount {
@@ -37,7 +39,9 @@ ApplicationWindow {
     Rectangle{
         id: mainRect
         anchors.fill: parent
+        anchors.margins: 10
         radius: 10 // 圆角
+
         // 将 MenuBar 移入内部放置在顶部，不再用 ApplicationWindow.menuBar 属性
 
         Rectangle {
@@ -396,9 +400,11 @@ ApplicationWindow {
             id: logTableView 
             anchors {
                 top: horizontalHeader.bottom
-                bottom: parent.bottom
                 left: verticalHeader.right
                 right: parent.right
+                bottom: parent.bottom
+                // Reserve space for logDetailScrollView
+                bottomMargin: logDetailVisible ? logDetailScrollView.height : 0
             }
             boundsBehavior: Flickable.OvershootBounds
             clip: true
@@ -524,10 +530,46 @@ ApplicationWindow {
                     logTableView.model.pasteFromClipboard(targetIndex)
                 }
             }
+
+            function toggleLogDetail() {
+                logDetailVisible = !logDetailVisible
+            }
         }
 
         SelectionRectangle {
             target: logTableView
+        }
+
+        // 替换原来的 TextArea 背景设置：使用包裹的 Rectangle 来设置颜色
+        ScrollView {
+            id: logDetailScrollView
+            anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+            }
+            width: parent.width
+            height: logDetailVisible ? root.height/6 : 0
+            Behavior on height {
+                NumberAnimation { duration: 200 }
+            }
+
+            QC.TextArea {
+                id: logDetailArea
+                anchors.fill: parent
+                readOnly: true
+                wrapMode: TextArea.Wrap
+                // Ensure the TextArea measures the full width before wrapping lines:
+                implicitWidth: parent.width / 2
+                text: ""
+                background: Rectangle {
+                    // anchors.fill: parent
+                    color: "#FDF6E3"
+                }
+            }
+            ScrollBar.vertical: ScrollBarThemed {
+                policy: ScrollBar.AsNeeded
+            }
         }
 
         property var filterModel: [
@@ -598,7 +640,7 @@ ApplicationWindow {
             id: closeButton
             width: 20
             height: 20
-            x: root.width - 20; 
+            x: root.width - 45; 
 
             radius: 5
             // 默认背景颜色
@@ -647,7 +689,7 @@ ApplicationWindow {
             id: minimizeButton
             width: 20
             height: 20
-            x: root.width - 40; 
+            x: root.width - 70; 
             radius: 5
             property color normalColor: "white"
             property color hoverColor: "#b1ecec"
@@ -689,10 +731,32 @@ ApplicationWindow {
 
     }
 
+    // 修改 MultiEffect 参数，注意 shadowBlur 值和偏移
+    MultiEffect {
+        id: effect
+        anchors.fill: mainRect
+        source: mainRect
+        shadowEnabled: true
+        shadowColor: "lightgrey"
+        shadowBlur: 0.5           // 增大模糊半径
+        autoPaddingEnabled: true
+        shadowHorizontalOffset: 0  // 无偏移
+        shadowVerticalOffset: 0   // 无偏移
+    }
+
     Connections {
         target: logModel
-        onFtsUpdateFinished: {
+        function onFtsUpdateFinished() {
             root.ftsLoading = false;
+        }
+    }
+
+    Connections {
+        target: logTableView.selectionModel
+        function onCurrentIndexChanged() {
+            if (logTableView.selectionModel.currentIndex.valid && logDetailVisible) {
+                logDetailArea.text = logModel.getLogDetail(logTableView.selectionModel.currentIndex.row)
+            }
         }
     }
 }
