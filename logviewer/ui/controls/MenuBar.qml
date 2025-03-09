@@ -25,6 +25,18 @@ import QtQuick.Controls as Controls
 
 Controls.MenuBar {
     spacing: 10
+    Component.onCompleted: {
+        // 一次性设置宽度，避免绑定循环
+        implicitWidth = childrenRect.width + 20
+    }
+    
+    // 新增背景设置圆角
+    background: Rectangle {
+        anchors.fill: parent
+        radius: 10
+        color: Theme.darkBackgroundColor  // 根据需要设置背景色
+        border.color: "transparent"  // 可选：设置边框颜色
+    }
 
     property var logModel
     property var logTableView

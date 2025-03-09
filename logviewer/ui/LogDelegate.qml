@@ -12,7 +12,7 @@ Rectangle {
     id: tableCellDelegate
 
     implicitHeight: 32
-    border.color: "black"
+    border.color: "lightgrey"
     border.width: 1
 
     color: {
@@ -39,7 +39,6 @@ Rectangle {
         verticalAlignment: Text.AlignVCenter
         font.weight: (selected || current) ? Font.DemiBold : Font.Normal
         font.pointSize: 12
-        // font.family: fontMonospace
 
         textFormat: Text.PlainText
         text: display
