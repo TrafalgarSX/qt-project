@@ -56,7 +56,6 @@ void ApplicationSettings::addRecentFile(const QString &filePath)
     if (files.size() > 20)
         files.removeLast();
 
-    qDebug() << "addRecentFile" << files;
     setValue("recentFiles", files);
     emit recentFilesChanged();
 }

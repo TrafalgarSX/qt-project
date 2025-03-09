@@ -6,6 +6,16 @@
 #include <QUrl>
 #include <QGuiApplication>
 #include <QClipboard>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QSqlError>
+#include <QtConcurrent>
+#include <QFutureWatcher>
+
+#include "util/utils_timer.hpp"
+
+// 定义静态成员变量
+// QSqlDatabase LogModel::s_ftsDb;
 
 LogModel::LogModel(QObject *parent)
     : QAbstractTableModel(parent)
@@ -102,7 +112,6 @@ QVariant LogModel::data(const QModelIndex &index, int role) const
 
 QVariant LogModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    qDebug() << "headerData:" << section << orientation << role;
     if (orientation == Qt::Horizontal && role == LogDisplayRole) {
         switch (section) {
         case 0:
@@ -121,14 +130,9 @@ QVariant LogModel::headerData(int section, Qt::Orientation orientation, int role
             return QVariant();
         }
     } else if (orientation == Qt::Vertical) {
-        return QString::number(section + 1).rightJustified(6, '0'); // 固定宽度6（用'0'填充）
+        return QString::number(section).rightJustified(6, '0'); // 固定宽度6（用'0'填充）
     }
     return QVariant();
-}
-
-QString LogModel::GetHorizontalHeaderName(int section) const
-{
-	return headerData(section, Qt::Horizontal, LogDisplayRole).toString();
 }
 
 Qt::ItemFlags LogModel::flags(const QModelIndex &index) const
@@ -186,11 +190,38 @@ Q_INVOKABLE void LogModel::copyToClipboard(const QModelIndexList &indexes) const
 
 Q_INVOKABLE bool LogModel::pasteFromClipboard(const QModelIndex &targetIndex)
 {
+    // log table is read-only
+    return false;
+#if 0
     const QMimeData *mimeData = QGuiApplication::clipboard()->mimeData();
     // Consider using a QUndoCommand for the following call. It should store
     // the (mime) data for the model items that are about to be overwritten, so
     // that a later call to undo can revert it.
     return dropMimeData(mimeData, Qt::CopyAction, -1, -1, targetIndex);
+#endif
+}
+
+bool LogModel::initializeFTSDatabase()
+{
+    if (s_ftsDb.isValid()) {
+        QSqlQuery dropQuery(s_ftsDb);
+        if (!dropQuery.exec("DROP TABLE IF EXISTS logs_fts;")) {
+            qWarning() << "Drop logs_fts error:" << dropQuery.lastError().text();
+        }
+    } else {
+        s_ftsDb = QSqlDatabase::addDatabase("QSQLITE", "FTSConnection");
+        s_ftsDb.setDatabaseName(":memory:");
+        if (!s_ftsDb.open()) {
+            qWarning() << "FTS DB open failed:" << s_ftsDb.lastError().text();
+            return false;
+        }
+    }
+    QSqlQuery createQuery(s_ftsDb);
+    if (!createQuery.exec("CREATE VIRTUAL TABLE logs_fts USING fts5(timestamp, thread, level, file, line, message, tokenize='trigram');")) {
+        qWarning() << "FTS table creation error:" << createQuery.lastError().text();
+        return false;
+    }
+    return true;
 }
 
 void LogModel::loadLogs(const QString &logFileUrl)
@@ -201,7 +232,6 @@ void LogModel::loadLogs(const QString &logFileUrl)
         qWarning() << "Cannot open log file:" << logFilePath;
         return;
     }
-
     beginResetModel();
     m_entries.clear();
 
@@ -301,10 +331,63 @@ void LogModel::loadLogs(const QString &logFileUrl)
         m_entries.append(currentEntry);
 
     file.close();
+
     endResetModel();
+
+    updateFtsAsync();
+}
+
+void LogModel::updateFTS()
+{
+    // 每次 loadLogs 时更新全文索引：先清空，再插入当前数据
+    if (s_ftsDb.isValid()) {
+        QSqlQuery clearQuery(s_ftsDb);
+        if (!clearQuery.exec("DELETE FROM logs_fts;")) {
+            // TODO 这里应该通知 qml 界面
+            qWarning() << "Failed to clear logs_fts:" << clearQuery.lastError().text();
+        }
+        // 开始事务
+        if (!s_ftsDb.transaction()) {
+            qWarning() << "Failed to start transaction:" << s_ftsDb.lastError().text();
+            return;
+        }
+        for (int row = 0; row < m_entries.size(); row++) {
+            const LogEntry &entry = m_entries.at(row);
+            QSqlQuery insertQuery(s_ftsDb);
+            insertQuery.prepare("INSERT INTO logs_fts(rowid, timestamp, thread, level, file, line, message) "
+                                "VALUES (?, ?, ?, ?, ?, ?, ?);");
+            insertQuery.addBindValue(row + 1);
+            insertQuery.addBindValue(entry.timestamp);
+            insertQuery.addBindValue(entry.thread);
+            insertQuery.addBindValue(entry.level);
+            insertQuery.addBindValue(entry.file);
+            insertQuery.addBindValue(entry.line);
+            insertQuery.addBindValue(entry.message);
+            if (!insertQuery.exec()) {
+                qWarning() << "FTS insert error:" << insertQuery.lastError().text();
+            }
+        }
+        if (!s_ftsDb.commit()) {
+            qWarning() << "Transaction commit failed:" << s_ftsDb.lastError().text();
+        }
+    }
 
 }
 
+// 新增：异步更新 FTS 索引方法
+void LogModel::updateFtsAsync()
+{
+    auto *watcher = new QFutureWatcher<void>(this);
+    connect(watcher, &QFutureWatcher<void>::finished, this, [this, watcher]() {
+         emit ftsUpdateFinished();
+         watcher->deleteLater();
+    });
+    // TODO bug here: if the function is called multiple times, program will crash
+    QFuture<void> future = QtConcurrent::run([this]() {
+        updateFTS();
+    });
+    watcher->setFuture(future);
+}
 
 // 辅助函数，根据字段名获取对应的日志条目字符串
 static QString getFieldValue(const LogEntry &entry, const QString &field)
@@ -328,55 +411,49 @@ QModelIndex LogModel::searchLogs(const QString &query, const QStringList &fields
 {
     m_searchResult.clear();
     m_currentSearchIndex = -1;
-
-    static int count = 0;
-    qDebug() << "search count: " << ++count; 
-    bool searchAll = fields.size() == 6 ? true : false;
-    QString lowerQuery = query.toLower(); // precompute lower-case query
-    for (int row = 0; row < m_entries.size(); ++row) {
-        const LogEntry &entry = m_entries.at(row);
-        bool match = false;
-        if (searchAll) {
-            QString combined = entry.timestamp + "\t" +
-                               entry.thread + "\t" +
-                               entry.level + "\t" +
-                               entry.file + "\t" +
-                               entry.line + "\t" +
-                               entry.message;
-            if (combined.toLower().contains(lowerQuery))
-                match = true;
-        } else {
-            if (!match && fields.contains("timestamp", Qt::CaseInsensitive)) {
-                if (entry.timestamp.toLower().contains(lowerQuery))
-                    match = true;
-            }
-            if (!match && fields.contains("thread", Qt::CaseInsensitive)) {
-                if (entry.thread.toLower().contains(lowerQuery))
-                    match = true;
-            }
-            if (!match && fields.contains("level", Qt::CaseInsensitive)) {
-                if (entry.level.toLower().contains(lowerQuery))
-                    match = true;
-            }
-            if (!match && fields.contains("file", Qt::CaseInsensitive)) {
-                if (entry.file.toLower().contains(lowerQuery))
-                    match = true;
-            }
-            if (!match && fields.contains("line", Qt::CaseInsensitive)) {
-                if (entry.line.toLower().contains(lowerQuery))
-                    match = true;
-            }
-            if (!match && fields.contains("message", Qt::CaseInsensitive)) {
-                if (entry.message.toLower().contains(lowerQuery))
-                    match = true;
-            }
-        }
-        if (match) {
-            QModelIndex idx = index(row, 0);
-            if (idx.isValid())
-                m_searchResult.append(idx);
-        }
+    
+    if (!s_ftsDb.isValid()) {
+        qWarning() << "FTS database is not initialized.";
+        return QModelIndex();
     }
+    
+    // 判断是否需要区分大小写
+    bool caseSensitive = true;
+    QStringList searchFields = fields;
+    if(searchFields.contains("caseInsensitive", Qt::CaseInsensitive)) {
+        caseSensitive = false;
+        searchFields.removeAll("caseInsensitive");
+    }
+
+    // 构造 FTS 查询条件
+    QString searchCondition;
+    if (searchFields.isEmpty()) {
+        // 如果未指定具体列，则默认查询所有字段
+        searchCondition = query;
+    } else {
+        QStringList conditions;
+        for (const QString &field : searchFields) {
+            // 构造如 message:"xxx" 的条件
+            conditions.append(QString(R"(%1:"%2")").arg(field).arg(query));
+        }
+        searchCondition = conditions.join(" OR ");
+    }
+    
+    QSqlQuery ftsQuery(s_ftsDb);
+    ftsQuery.prepare("SELECT rowid FROM logs_fts WHERE logs_fts MATCH ? ORDER BY rowid;");
+    ftsQuery.addBindValue(searchCondition);
+    if (!ftsQuery.exec()) {
+        qWarning() << "FTS query error:" << ftsQuery.lastError().text();
+        return QModelIndex();
+    }
+    
+    while (ftsQuery.next()) {
+        int rowid = ftsQuery.value(0).toInt();
+        QModelIndex idx = index(rowid - 1, 0);
+        if (idx.isValid())
+            m_searchResult.append(idx);
+    }
+    
     if (!m_searchResult.isEmpty()) {
         m_currentSearchIndex = 0;
         return m_searchResult.first();

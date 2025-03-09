@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 DBus)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Qml Quick QuickControls2 DBus Sql Concurrent)
 find_package(OpenSSL REQUIRED)
 
 qt_standard_project_setup(REQUIRES 6.5)
@@ -42,6 +42,8 @@ list(
   Qt6::Quick
   Qt6::QuickControls2
   Qt6::DBus
+  Qt6::Sql
+  Qt6::Concurrent
 )
 
 # list(APPEND EXTRA_COMPILE_FLAGS "-Wno-deprecated-declarations")
@@ -81,6 +83,7 @@ qt_add_qml_module(${PROJECT_NAME}
     SOURCES
         ${PROJECT_SOURCE_DIR}/src/LogModel.h ${PROJECT_SOURCE_DIR}/src/LogModel.cpp
     RESOURCES
+        ui/fonts/HackNerdFont-Regular.ttf
         ui/icons/next.svg
         ui/icons/prev.svg
         ui/icons/search.svg

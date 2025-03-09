@@ -17,6 +17,17 @@ ApplicationWindow {
     color: "transparent" // 背景透明
     flags: Qt.FramelessWindowHint | Qt.Window | Qt.WindowMinimizeButtonHint
     font.family: hacknerd.name  // 设置默认字体
+    property bool ftsLoading: true
+    property int dotCount: 0
+    property string loadingDots: ".".repeat(dotCount)
+
+    // 用 NumberAnimation 替代 Timer 自动循环更新 dotCount
+    NumberAnimation on dotCount {
+        from: 0; to: 10
+        duration: 2000
+        loops: Animation.Infinite
+        running: ftsLoading
+    }
 
     FontLoader {
         id: hacknerd
@@ -196,9 +207,27 @@ ApplicationWindow {
                 spacing: Theme.defaultSpacing * 2
                 SearchInput {
                     id: searchField
-                    placeholderText: qsTr("Search")
+                    enabled: !root.ftsLoading
+                    placeholderText: root.ftsLoading ?
+                                    "Log file is too large; search indexes are loading, please wait" + root.loadingDots :
+                                    qsTr("Search: at least 3 characters, press <Enter> to search, Case sensitivity is not currently supported.")
                     Layout.fillWidth: true
-                    onEditingFinished: { searchDelayTimer.restart() }
+                    onEditingFinished: {
+                        var fields = []
+                        // 从 filterMenu 中收集被选中的搜索字段（假设每个CheckElement的text就是字段名称）
+                        for (var i = 0; i < filterLayout.children.length; i++) {
+                            var child = filterLayout.children[i]
+                            if(child.text && child.checked)
+                                fields.push(child.text)
+                        }
+                        var resultIdx = logModel.searchLogs(searchField.text, fields)
+                        if(resultIdx.valid){
+                            logTableView.selectionModel.select(resultIdx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+                            logTableView.selectionModel.setCurrentIndex(resultIdx, ItemSelectionModel.Current)
+                            logTableView.positionViewAtRow(resultIdx.row, TableView.Contain)
+                        }
+
+                    }
                 }
                 IconButton {
                     selected: filterMenu.visible
@@ -233,28 +262,6 @@ ApplicationWindow {
                             logTableView.selectionModel.setCurrentIndex(idx, ItemSelectionModel.Current)
                             logTableView.positionViewAtRow(idx.row, TableView.Contain | TableView.AlignVCenter)
                         }
-                    }
-                }
-            }
-            // 新增延迟定时器，用于在输入结束后再搜索
-            Timer {
-                id: searchDelayTimer
-                interval: 500
-                repeat: false
-                onTriggered: {
-                    var fields = []
-                    // 从 filterMenu 中收集被选中的搜索字段（假设每个CheckElement的text就是字段名称）
-                    for (var i = 0; i < filterLayout.children.length; i++) {
-                        var child = filterLayout.children[i]
-                        if(child.text && child.checked)
-                            fields.push(child.text.toLowerCase())
-                    }
-                    var resultIdx = logModel.searchLogs(searchField.text, fields)
-                    console.log("searchLogs end")
-                    if(resultIdx.valid){
-                        logTableView.selectionModel.select(resultIdx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
-                        logTableView.selectionModel.setCurrentIndex(resultIdx, ItemSelectionModel.Current)
-                        logTableView.positionViewAtRow(resultIdx.row, TableView.Contain)
                     }
                 }
             }
@@ -354,6 +361,37 @@ ApplicationWindow {
 
         }
 
+        // 在 TableView 上层添加一个透明覆盖层，用于接收拖放事件
+        Item {
+            id: dropOverlay
+            anchors.fill: logTableView
+            z: 100  // 确保在顶部
+            Rectangle {
+                anchors.fill: parent
+                id: overlayBg
+                color: "transparent"
+            }
+            DropArea {
+                anchors.fill: parent
+                // Use a JavaScript function with a formal parameter "drop"
+                onDropped: function(drop) {
+                    overlayBg.color = "transparent"
+                    logModel.loadLogs(drop.urls[0])
+                    settings.addRecentFile(drop.urls[0])
+                }
+                onEntered: {
+                    if (drag.urls.length !== 1) { // 过滤事件，只能拖拽一个项目
+                        drag.accepted = false 
+                        return false;
+                    }
+                    overlayBg.color = "#3355ff55"  // 半透明蓝色高亮提示
+                }
+                onExited: {
+                    overlayBg.color = "transparent"
+                }
+            }
+        }
+        
         TableView {
             id: logTableView 
             anchors {
@@ -464,6 +502,10 @@ ApplicationWindow {
                         ItemSelectionModel.Current
                     );
                     event.accepted = true;
+                } else if(event.key === Qt.Key_Tab) {
+                    // TODO
+                    // searchField.focus = true
+                    event.accepted = true
                 }
             }
 
@@ -495,7 +537,7 @@ ApplicationWindow {
             {"name": "file"},
             {"name": "line"},
             {"name": "message"},
-            {"name": "caseInsensitive"},
+            // {"name": "caseInsensitive"},
         ]
 
         MenuPopup {
@@ -520,7 +562,7 @@ ApplicationWindow {
                         required property var modelData
                         text: modelData.name
                         Layout.alignment: Qt.AlignRight
-                        checked: modelData.name === "timestamp" ? true : false
+                        checked: modelData.name === "message" ? true : false
                     }
                 }
             }
@@ -531,6 +573,7 @@ ApplicationWindow {
             id: logModel
             Component.onCompleted: {
                 // 加载日志文件
+                initializeFTSDatabase()
                 console.log("LogModel completed")
             }
         }
@@ -646,4 +689,10 @@ ApplicationWindow {
 
     }
 
+    Connections {
+        target: logModel
+        onFtsUpdateFinished: {
+            root.ftsLoading = false;
+        }
+    }
 }
