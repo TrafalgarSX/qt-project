@@ -18,10 +18,11 @@ ApplicationWindow {
     color: "transparent" // 背景透明
     flags: Qt.FramelessWindowHint | Qt.Window | Qt.WindowMinimizeButtonHint
     font.family: hacknerd.name  // 设置默认字体
-    property bool ftsLoading: true
     property int dotCount: 0
     property string loadingDots: ".".repeat(dotCount)
     property bool logDetailVisible: false
+    property bool useFTS: false
+    property bool ftsLoading: false // TODO 这里需要优化下，不应该直接设置为 false，而是根据 FTS 状态来设置
 
     // 用 NumberAnimation 替代 Timer 自动循环更新 dotCount
     NumberAnimation on dotCount {
@@ -224,7 +225,13 @@ ApplicationWindow {
                             if(child.text && child.checked)
                                 fields.push(child.text)
                         }
-                        var resultIdx = logModel.searchLogs(searchField.text, fields)
+                        var resultIdx
+                        if(useFTS) {
+                            resultIdx = logModel.searchLogs(searchField.text, fields)
+                        }else {
+                            resultIdx = logModel.searchLogsSQL(searchField.text, fields)
+                        }
+                        // TODO CHECK
                         if(resultIdx.valid){
                             logTableView.selectionModel.select(resultIdx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
                             logTableView.selectionModel.setCurrentIndex(resultIdx, ItemSelectionModel.Current)
@@ -615,7 +622,11 @@ ApplicationWindow {
             id: logModel
             Component.onCompleted: {
                 // 加载日志文件
-                initializeFTSDatabase()
+                if(useFTS) {
+                    initializeFTSDatabase()
+                }else{
+                    initializeNormalDatabase()
+                }
                 console.log("LogModel completed")
             }
         }

@@ -224,6 +224,40 @@ bool LogModel::initializeFTSDatabase()
     return true;
 }
 
+// 新增函数：初始化普通数据库（开启 WAL 模式、创建表和 message 字段索引）
+bool LogModel::initializeNormalDatabase()
+{
+    if (s_normalDb.isValid()) {
+        QSqlQuery dropQuery(s_normalDb);
+        dropQuery.exec("DROP TABLE IF EXISTS logs_normal;");
+    } else {
+        s_normalDb = QSqlDatabase::addDatabase("QSQLITE", "NormalConnection");
+        s_normalDb.setDatabaseName(":memory:");
+        if (!s_normalDb.open()) {
+            qWarning() << "Normal DB open failed:" << s_normalDb.lastError().text();
+            return false;
+        }
+        // 开启 WAL 模式
+        QSqlQuery pragmaQuery(s_normalDb);
+        if (!pragmaQuery.exec("PRAGMA journal_mode=WAL;")) {
+            qWarning() << "Failed to set WAL mode:" << pragmaQuery.lastError().text();
+        }
+    }
+    QSqlQuery createQuery(s_normalDb);
+    // 创建普通数据表
+    if (!createQuery.exec("CREATE TABLE logs_normal (rowid INTEGER PRIMARY KEY, timestamp TEXT, thread TEXT, level TEXT, file TEXT, line TEXT, message TEXT);")) {
+        qWarning() << "Normal table creation error:" << createQuery.lastError().text();
+        return false;
+    }
+    // 在 message 字段上创建索引
+    QSqlQuery indexQuery(s_normalDb);
+    if (!indexQuery.exec("CREATE INDEX IF NOT EXISTS idx_message ON logs_normal(message);")) {
+        qWarning() << "Index creation error:" << indexQuery.lastError().text();
+        return false;
+    }
+    return true;
+}
+
 void LogModel::loadLogs(const QString &logFileUrl)
 {
     QString logFilePath = QUrl(logFileUrl).toLocalFile();
@@ -335,6 +369,7 @@ void LogModel::loadLogs(const QString &logFileUrl)
     endResetModel();
 
     updateFtsAsync();
+    updateNormalAsync();
 }
 
 void LogModel::updateFTS()
@@ -372,6 +407,117 @@ void LogModel::updateFTS()
         }
     }
 
+}
+
+// 私有辅助函数：同步更新普通数据库表项
+void LogModel::updateNormal()
+{
+    if (s_normalDb.isValid()) {
+        QSqlQuery clearQuery(s_normalDb);
+        if (!clearQuery.exec("DELETE FROM logs_normal;")) {
+            qWarning() << "Failed to clear logs_normal:" << clearQuery.lastError().text();
+        }
+        if (!s_normalDb.transaction()) {
+            qWarning() << "Failed to start normal DB transaction:" << s_normalDb.lastError().text();
+            return;
+        }
+        for (int row = 0; row < m_entries.size(); ++row) {
+            const LogEntry &entry = m_entries.at(row);
+            QSqlQuery insertQuery(s_normalDb);
+            insertQuery.prepare("INSERT INTO logs_normal(rowid, timestamp, thread, level, file, line, message) "
+                                "VALUES (?, ?, ?, ?, ?, ?, ?);");
+            insertQuery.addBindValue(row + 1);
+            insertQuery.addBindValue(entry.timestamp);
+            insertQuery.addBindValue(entry.thread);
+            insertQuery.addBindValue(entry.level);
+            insertQuery.addBindValue(entry.file);
+            insertQuery.addBindValue(entry.line);
+            insertQuery.addBindValue(entry.message);
+            if (!insertQuery.exec()) {
+                qWarning() << "Normal DB insert error:" << insertQuery.lastError().text();
+            }
+        }
+        if (!s_normalDb.commit()) {
+            qWarning() << "Normal DB transaction commit failed:" << s_normalDb.lastError().text();
+        }
+    }
+}
+
+// 新增：异步更新普通数据库表项函数
+void LogModel::updateNormalAsync()
+{
+    auto *watcher = new QFutureWatcher<void>(this);
+    connect(watcher, &QFutureWatcher<void>::finished, this, [this, watcher]() {
+         // 可在此添加额外信号
+         watcher->deleteLater();
+    });
+    QFuture<void> future = QtConcurrent::run([this]() {
+        updateNormal();
+    });
+    watcher->setFuture(future);
+}
+
+// 修改后的 searchLogsSQL 实现：支持 fields 参数和大小写敏感配置
+QModelIndex LogModel::searchLogsSQL(const QString &query, const QStringList &fields)
+{
+    m_searchResult.clear();
+    m_currentSearchIndex = -1;
+    
+    if (!s_normalDb.isValid()) {
+        qWarning() << "Normal DB is not initialized.";
+        return QModelIndex();
+    }
+    
+    bool caseSensitive = true;
+    QStringList searchFields = fields;
+    // 如果包含 "caseInsensitive"，则设置为不区分大小写，并移除该项
+    if (searchFields.contains("caseInsensitive", Qt::CaseInsensitive)) {
+        caseSensitive = false;
+        searchFields.removeAll("caseInsensitive");
+    }
+    
+    // 如果未指定搜索字段，默认使用 message
+    if (searchFields.isEmpty()) {
+        searchFields << "message";
+    }
+    
+    // 构造 WHERE 条件：每个字段对应一个 LIKE 条件
+    QStringList conditions;
+    for (const QString &field : searchFields) {
+        if (caseSensitive)
+            conditions << QString("%1 LIKE ? COLLATE binary").arg(field);
+        else
+            conditions << QString("%1 LIKE ?").arg(field);
+    }
+    QString whereClause = conditions.join(" OR ");
+    QString sql = QString("SELECT rowid FROM logs_normal WHERE %1 ORDER BY rowid;").arg(whereClause);
+    
+    QSqlQuery sqlQuery(s_normalDb);
+    sqlQuery.prepare(sql);
+    QString pattern = "%" + query + "%";
+    // 为每个搜索字段绑定相同的查询模式
+    for (int i = 0; i < searchFields.size(); ++i) {
+        sqlQuery.addBindValue(pattern);
+    }
+    
+    if (!sqlQuery.exec()) {
+        qWarning() << "Normal DB query error:" << sqlQuery.lastError().text();
+        return QModelIndex();
+    }
+    
+    while (sqlQuery.next()) {
+        int rowid = sqlQuery.value(0).toInt();
+        QModelIndex idx = index(rowid - 1, 0);
+        if (idx.isValid())
+            m_searchResult.append(idx);
+    }
+    
+    if (!m_searchResult.isEmpty()) {
+        m_currentSearchIndex = 0;
+        return m_searchResult.first();
+    }
+    
+    return QModelIndex();
 }
 
 // 新增：异步更新 FTS 索引方法

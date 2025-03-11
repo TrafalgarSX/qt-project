@@ -37,6 +37,13 @@ public:
 
     // 新增：初始化全文搜索数据库
     Q_INVOKABLE bool initializeFTSDatabase();
+    // 新增：初始化普通数据库（开启 WAL 模式、创建表和 message 字段索引）
+    Q_INVOKABLE bool initializeNormalDatabase();
+    // 新增：异步更新普通数据库表项
+    Q_INVOKABLE void updateNormalAsync();
+    // 修改此处的函数声明，添加 fields 参数（与 searchLogs 保持一致）
+    Q_INVOKABLE QModelIndex searchLogsSQL(const QString &query, const QStringList &fields);
+
     // 新增：后台更新 FTS 索引
     void updateFtsAsync();
 
@@ -62,6 +69,7 @@ signals:
 
 private: 
     void updateFTS();
+    void updateNormal();
 
 private:
     QVector<LogEntry> m_entries;
@@ -71,6 +79,8 @@ private:
 
     // 静态成员变量管理 FTS 数据库
     QSqlDatabase s_ftsDb;
+    // 新增：普通数据库连接
+    QSqlDatabase s_normalDb;
 };
 
 #endif // LOGMODEL_H
