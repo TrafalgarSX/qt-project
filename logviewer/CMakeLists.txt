@@ -21,6 +21,7 @@ list(APPEND PROJECT_SOURCES
             ${PROJECT_SOURCE_DIR}/src/util/utils_screen.h ${PROJECT_SOURCE_DIR}/src/util/utils_screen.cpp
             ${PROJECT_SOURCE_DIR}/src/util/utils_os_windows.h ${PROJECT_SOURCE_DIR}/src/util/utils_os_windows.cpp
             ${PROJECT_SOURCE_DIR}/src/util/utils_os_linux.h ${PROJECT_SOURCE_DIR}/src/util/utils_os_linux.cpp
+            ${PROJECT_SOURCE_DIR}/rc/logo.rc
             )
 
 list(
@@ -48,8 +49,8 @@ list(
 
 # list(APPEND EXTRA_COMPILE_FLAGS "-Wno-deprecated-declarations")
 set(WIN32_FLAG "")
-# if (WIN32)
-if (0)
+if (WIN32)
+# if (0)
     set(WIN32_FLAG "WIN32")
 endif()
 qt_add_executable(${PROJECT_NAME} ${WIN32_FLAG} ${PROJECT_SOURCES})
