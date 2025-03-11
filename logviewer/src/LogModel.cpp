@@ -255,7 +255,7 @@ bool LogModel::initializeNormalDatabase()
         qWarning() << "Index creation error:" << indexQuery.lastError().text();
         return false;
     }
-    return true;
+        return true;
 }
 
 void LogModel::loadLogs(const QString &logFileUrl)
@@ -468,12 +468,12 @@ QModelIndex LogModel::searchLogsSQL(const QString &query, const QStringList &fie
         return QModelIndex();
     }
     
-    bool caseSensitive = true;
+    bool caseSensitive = false;
     QStringList searchFields = fields;
     // 如果包含 "caseInsensitive"，则设置为不区分大小写，并移除该项
-    if (searchFields.contains("caseInsensitive", Qt::CaseInsensitive)) {
-        caseSensitive = false;
-        searchFields.removeAll("caseInsensitive");
+    if (searchFields.contains("caseSensitive", Qt::CaseInsensitive)) {
+        caseSensitive = true;
+        searchFields.removeAll("caseSensitive");
     }
     
     // 如果未指定搜索字段，默认使用 message
@@ -483,18 +483,25 @@ QModelIndex LogModel::searchLogsSQL(const QString &query, const QStringList &fie
     
     // 构造 WHERE 条件：每个字段对应一个 LIKE 条件
     QStringList conditions;
+    QString pattern;
     for (const QString &field : searchFields) {
-        if (caseSensitive)
-            conditions << QString("%1 LIKE ? COLLATE binary").arg(field);
-        else
+        if (caseSensitive) {
+            conditions << QString("%1 GLOB ? ").arg(field);
+            pattern = "*" + query + "*";
+        }
+        else {
             conditions << QString("%1 LIKE ?").arg(field);
+            pattern = "%" + query + "%";
+        }
+
     }
     QString whereClause = conditions.join(" OR ");
     QString sql = QString("SELECT rowid FROM logs_normal WHERE %1 ORDER BY rowid;").arg(whereClause);
     
     QSqlQuery sqlQuery(s_normalDb);
     sqlQuery.prepare(sql);
-    QString pattern = "%" + query + "%";
+   
+
     // 为每个搜索字段绑定相同的查询模式
     for (int i = 0; i < searchFields.size(); ++i) {
         sqlQuery.addBindValue(pattern);

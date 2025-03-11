@@ -131,6 +131,41 @@ ApplicationWindow {
                     fillMode: Image.PreserveAspectFit
                 }
             }
+
+            Keys.onPressed: (event) => {
+                // Ctrl+W : 删除光标前的单词
+                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_W) {
+                    event.accepted = true;
+                    var pos = cursorPosition;
+                    if (pos > 0) {
+                        var textBefore = text.slice(0, pos);
+                        // 找到倒数第一个空格的位置
+                        var lastSpace = textBefore.lastIndexOf(" ");
+                        var newPos = (lastSpace === -1) ? 0 : lastSpace;
+                        text = text.slice(0, newPos) + text.slice(pos);
+                        cursorPosition = newPos;
+                    }
+                }
+                // Ctrl+A : 光标定位到行首
+                else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_A) {
+                    event.accepted = true;
+                    cursorPosition = 0;
+                }
+                // Ctrl+E : 光标定位到行尾
+                else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_E) {
+                    event.accepted = true;
+                    cursorPosition = text.length;
+                }
+                // Ctrl+L : 清空所有输入内容
+                else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_L) {
+                    event.accepted = true;
+                    text = "";
+                    cursorPosition = 0;
+                } else if (event.key === Qt.Key_Tab) {
+                    event.accepted = true;
+                    logTableView.forceActiveFocus();
+                }
+            }
         }
 
         component IconButton : QC.ToolButton {
@@ -213,9 +248,10 @@ ApplicationWindow {
                 SearchInput {
                     id: searchField
                     enabled: !root.ftsLoading
-                    placeholderText: root.ftsLoading ?
-                                    "Log file is too large; search indexes are loading, please wait" + root.loadingDots :
-                                    qsTr("Search: at least 3 characters, press <Enter> to search, Case sensitivity is not currently supported.")
+                    // placeholderText: root.ftsLoading ?
+                    //                 "Log file is too large; search indexes are loading, please wait" + root.loadingDots :
+                    //                 qsTr("Search: at least 3 characters, press <Enter> to search, Case sensitivity is not currently supported.")
+                    placeholderText: qsTr("press <Enter> to search, ctrl+l to clear, ctrl+w to delete word, ctrl+a to line start, ctrl+e to line end")
                     Layout.fillWidth: true
                     onEditingFinished: {
                         var fields = []
@@ -515,11 +551,29 @@ ApplicationWindow {
                         ItemSelectionModel.Current
                     );
                     event.accepted = true;
-                } else if(event.key === Qt.Key_Tab) {
-                    // TODO
-                    // searchField.focus = true
-                    event.accepted = true
+                } else if (event.key === Qt.Key_Tab) {
+                    event.accepted = true;
+                    searchField.forceActiveFocus();
+                } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_N) {
+                    event.accepted = true;
+                    var idx = logModel.nextSearchResult()
+                    if(idx.valid){
+                        logTableView.selectionModel.select(idx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+                        logTableView.selectionModel.setCurrentIndex(idx, ItemSelectionModel.Current)
+                        logTableView.positionViewAtRow(idx.row, TableView.Contain | TableView.AlignVCenter)
+                    }
                 }
+                // Ctrl+E : 光标定位到行尾
+                else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_P) {
+                    event.accepted = true;
+                    var idx = logModel.prevSearchResult()
+                    if(idx.valid){
+                        logTableView.selectionModel.select(idx, ItemSelectionModel.ClearAndSelect | ItemSelectionModel.Current | ItemSelectionModel.Rows)
+                        logTableView.selectionModel.setCurrentIndex(idx, ItemSelectionModel.Current)
+                        logTableView.positionViewAtRow(idx.row, TableView.Contain | TableView.AlignVCenter)
+                    }
+                }
+
             }
 
             Shortcut {
@@ -586,7 +640,7 @@ ApplicationWindow {
             {"name": "file"},
             {"name": "line"},
             {"name": "message"},
-            // {"name": "caseInsensitive"},
+            {"name": "caseSensitive"},
         ]
 
         MenuPopup {
